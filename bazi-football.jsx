@@ -1413,6 +1413,27 @@ function applySeedLineups(list, c) {
 }
 
 /* ═══════════ แอป ═══════════ */
+/* แอปมือถือ (WebView) เก็บหน้าเว็บไว้ในแคชได้ราว 10 นาทีตามที่ GitHub Pages กำหนด
+   เปิดมาจึงอาจเจอรุ่นเก่า — เช็คเลขรุ่นล่าสุดแบบไม่ใช้แคช ถ้าไม่ตรงให้โหลดหน้ารุ่นใหม่ทันที
+   (ลองครั้งเดียวต่อรุ่น กันวนโหลดถ้า CDN ยังไม่ทัน) · เลขรุ่นมาจาก build.sh ผ่าน --define */
+const BUILD_ID = typeof __BUILD_ID__ !== "undefined" ? __BUILD_ID__ : "dev";
+(function checkFreshBuild() {
+  try {
+    if (typeof location === "undefined" || location.hostname !== "aonquer-cpuqp.github.io" || !window.fetch) return;
+    const page = location.href.replace(/[?#].*$/, "");
+    fetch(page.replace(/[^/]*$/, "") + "version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => {
+        if (!j || !j.build || j.build === BUILD_ID) return;
+        const k = "duang:reload:" + j.build;
+        if (sessionStorage.getItem(k)) return;
+        sessionStorage.setItem(k, "1");
+        location.replace(page + "?v=" + j.build);
+      })
+      .catch(() => {});
+  } catch (e) { /* เช็คไม่ได้ก็ใช้รุ่นที่มีอยู่ */ }
+})();
+
 /* นัดพรีเมียร์ลีกถัดไปตามเวลาไทย ใช้เป็นคู่ตั้งต้นทุกครั้งที่เปิดแอป
    นัดที่เตะไปแล้วไม่เกิน 2 ชั่วโมงยังนับเป็นนัดนี้ (กำลังแข่งอยู่) · เตะพร้อมกันหลายคู่ เอาคู่แรกในตาราง */
 const LIVE_WINDOW_MS = 2 * 60 * 60 * 1000;
