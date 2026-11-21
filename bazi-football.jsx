@@ -6922,11 +6922,12 @@ const SEED_XI = {
 };
 
 const SEED_LINEUPS = {
+  "Fulham": { confirmed:true, forDate:"2026-11-21", kit:"away", start:["Bernd Leno", "Kenny Tete", "David Affengruber", "Calvin Bassey", "Ryan Sessegnon", "Sander Berge", "Shea Charles", "Oscar Bobb", "Joshua King", "Alex Iwobi", "Rodrigo Muniz"] },
+  "Manchester City": { confirmed:true, forDate:"2026-11-21", kit:"home", start:["Gianluigi Donnarumma", "Abdukodir Khusanov", "Rúben Dias", "Marc Guéhi", "Nico O'Reilly", "Ayyoub Bouaddi", "Elliot Anderson", "Iliman Ndiaye", "Phil Foden", "Jérémy Doku", "Erling Haaland"] },
   "Liverpool": { confirmed:false, forDate:"2026-11-22", kit:"home", start:["Alisson", "Milos Kerkez", "Virgil van Dijk", "Jeremy Jacquet", "Ronald Araújo", "Alexis Mac Allister", "Dominik Szoboszlai", "Bradley Barcola", "Florian Wirtz", "Cody Gakpo", "Alexander Isak"] },
   "Manchester United": { confirmed:false, forDate:"2026-11-22", kit:"third", start:["Senne Lammens", "Leny Yoro", "Harry Maguire", "Noussair Mazraoui", "Diogo Dalot", "Kobbie Mainoo", "Youri Tielemans", "Bruno Fernandes", "Amad Diallo", "Matheus Cunha", "Bryan Mbeumo"] },
   "AS Roma": { confirmed:true, forDate:"2026-11-03", kit:"away", start:["Devis Vásquez", "Gianluca Mancini", "Leonardo Balerdi", "Mario Hermoso", "Devyne Rensch", "Bryan Cristante", "Marten de Roon", "Wesley", "Rodrigo Mora", "Matías Soulé", "Donyell Malen"] },
   "Aston Villa": { confirmed:true, forDate:"2026-10-31", kit:"home", start:["Zion Suzuki", "Matty Cash", "Victor Lindelöf", "Pau Torres", "Ian Maatsen", "Boubacar Kamara", "Leon Goretzka", "Alysson Edward", "John McGinn", "Johan Manzambi", "Nicolas Jackson"] },
-  "Manchester City": { confirmed:true, forDate:"2026-10-31", kit:"home", start:["Gianluigi Donnarumma", "Matheus Nunes", "Abdukodir Khusanov", "Rúben Dias", "Joško Gvardiol", "Elliot Anderson", "Ayyoub Bouaddi", "Iliman Ndiaye", "Enzo Fernández", "Jérémy Doku", "Erling Haaland"] },
   "Nottingham Forest": { confirmed:true, forDate:"2026-10-31", kit:"away", start:["Matz Sels", "Jair Cunha", "Nikola Milenković", "Murillo", "Ola Aina", "James McAtee", "Xaver Schlager", "Neco Williams", "Morgan Gibbs-White", "Dan Ndoye", "Liam Delap"] },
   "Arsenal": { confirmed:true, forDate:"2026-11-01", kit:"away", start:["David Raya", "Jurriën Timber", "Ezri Konsa", "Gabriel Magalhães", "Riccardo Calafiori", "Declan Rice", "Bruno Guimarães", "Noni Madueke", "Martin Ødegaard", "Christos Tzolis", "Kai Havertz"] },
   "Sunderland": { confirmed:true, forDate:"2026-10-31", kit:"home", start:["Robin Roefs", "Trai Hume", "Luke O'Nien", "Omar Alderete", "Reinildo Mandava", "Granit Xhaka", "Noah Sadiki", "Nilson Angulo", "Chris Rigg", "Enzo Le Fée", "Brian Brobbey"] },
@@ -6935,7 +6936,6 @@ const SEED_LINEUPS = {
   "Crystal Palace": { confirmed:true, forDate:"2026-10-31", kit:"away", start:["Dean Henderson", "Chris Richards", "Axel Disasi", "Jaydee Canvot", "Óscar Mingueza", "Adam Wharton", "Daichi Kamada", "Tyrick Mitchell", "Dwight McNeil", "Yéremy Pino", "Jean-Philippe Mateta"] },
   "Leeds United": { confirmed:true, forDate:"2026-10-31", kit:"home", start:["James Trafford", "James Justin", "Nico Elvedi", "Tarik Muharemović", "Jayden Bogle", "Ethan Ampadu", "Ao Tanaka", "Gabriel Gudmundsson", "Daniel James", "Harry Wilson", "Dominic Calvert-Lewin"] },
 
-  "Fulham": { confirmed:true, forDate:"2026-10-31", kit:"away", start:["Bernd Leno", "Timothy Castagne", "David Affengruber", "Calvin Bassey", "Antonee Robinson", "Sander Berge", "Shea Charles", "Oscar Bobb", "Joshua King", "Alex Iwobi", "Gonzalo García"] },
   "Hull City": { confirmed:true, forDate:"2026-10-31", kit:"home", start:["Konstantinos Tzolakis", "Lewie Coyle", "Semi Ajayi", "John Egan", "Nobel Mendy", "Ryan Giles", "Mohamed Belloumi", "Tim Iroegbunam", "Regan Slater", "Elliot Stroud", "Oli McBurnie"] },
   "Everton": { confirmed:true, forDate:"2026-11-02", kit:"away", start:["Jordan Pickford", "Jake O'Brien", "James Tarkowski", "Jarrad Branthwaite", "Vitaliy Mykolenko", "James Garner", "Harrison Armstrong", "Merlin Rohl", "Kiernan Dewsbury-Hall", "Tyrique George", "Thierno Barry"] },
   "Atlético Madrid": ["Jan Oblak","Marcos Llorente","Cristian Romero","Robin Le Normand","Álex Grimaldo",
@@ -7046,6 +7046,16 @@ function poissonForecast(model, home, away) {
    วัดกับผล 89 นัดแล้ว ตลาดทายตัวเต็งถูก 67.2% ส่วนโมเดลเราได้ 60.3%
    จึงใช้ตลาดเป็นฐาน แล้วให้ดวงเป็นตัวเอียงเล็ก ๆ แทนที่จะเชื่อโมเดลตัวเองล้วน */
 const SEED_ODDS = [
+  ["2026-11-23","Brentford","Everton",2.12,3.51,3.26,1.71,2.05,-0.25,1.81,1.94],
+  ["2026-11-22","Liverpool","Manchester United",1.74,4.14,4.08,1.46,2.6,-0.75,1.87,1.87],
+  ["2026-11-22","Hull City","Brighton",6.22,4.41,1.48,1.64,2.19,1,2,1.75],
+  ["2026-11-21","Newcastle United","Arsenal",5.46,4.12,1.57,1.69,2.08,1,1.82,1.92],
+  ["2026-11-21","Tottenham Hotspur","Ipswich Town",1.52,4.42,5.49,1.56,2.33,-1,1.82,1.92],
+  ["2026-11-21","Coventry City","Crystal Palace",2.42,3.5,2.73,1.66,2.14,0,1.78,1.96],
+  ["2026-11-21","Chelsea","Leeds United",1.87,3.66,3.89,1.75,2,-0.5,1.81,1.92],
+  ["2026-11-21","Bournemouth","Nottingham Forest",1.93,3.54,3.78,1.81,1.93,-0.5,1.87,1.85],
+  ["2026-11-21","Aston Villa","Sunderland",1.76,3.77,4.34,1.75,2.01,-0.75,1.94,1.8],
+  ["2026-11-21","Manchester City","Fulham",1.37,5.13,7.17,1.46,2.6,-1.5,1.97,1.78],
   ["2026-11-08","Sunderland","Chelsea",3,3.43,2.27,1.82,1.93,0.25,1.82,1.93],
   ["2026-11-08","Manchester United","Aston Villa",1.97,3.95,3.31,1.43,2.72,-0.5,1.92,1.81],
   ["2026-11-08","Ipswich Town","Bournemouth",3.43,3.72,1.99,1.61,2.25,0.5,1.79,1.95],
