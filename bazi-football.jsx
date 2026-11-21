@@ -6286,11 +6286,11 @@ const FIXTURES = [
 
   ["2026-12-19","22:00","Bournemouth","Coventry City"],
   ["2026-12-19","22:00","Arsenal","Manchester United"],
-  ["2026-12-19","22:00","Brentford","Newcastle United"],
+  ["2026-12-19","19:30","Brentford","Newcastle United"],
   ["2026-12-19","22:00","Brighton","Ipswich Town"],
   ["2026-12-19","22:00","Chelsea","Aston Villa"],
   ["2026-12-19","22:00","Leeds United","Fulham"],
-  ["2026-12-19","22:00","Liverpool","Tottenham Hotspur"],
+  ["2026-12-20","00:30","Liverpool","Tottenham Hotspur"],
   ["2026-12-19","22:00","Manchester City","Hull City"],
   ["2026-12-19","22:00","Nottingham Forest","Everton"],
   ["2026-12-19","22:00","Sunderland","Crystal Palace"],
