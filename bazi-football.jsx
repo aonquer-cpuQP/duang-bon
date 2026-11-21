@@ -1413,6 +1413,18 @@ function applySeedLineups(list, c) {
 }
 
 /* ═══════════ แอป ═══════════ */
+/* ปุ่มย้อนกลับของมือถือ (ในแอป Android) — ปิดหน้าที่ซ้อนอยู่บนสุดก่อน แล้วค่อยกลับแท็บแรก */
+const BACK_STACK = [];
+function useBackClose(onClose) {
+  const ref = useRef(onClose);
+  ref.current = onClose;
+  useEffect(() => {
+    const f = () => ref.current && ref.current();
+    BACK_STACK.push(f);
+    return () => { const i = BACK_STACK.lastIndexOf(f); if (i >= 0) BACK_STACK.splice(i, 1); };
+  }, []);
+}
+
 export default function App() {
   const [teams, setTeams] = useState([]);          // [{slug,name,kit}]
   const [cache, setCache] = useState({});          // slug -> players[]
@@ -1434,6 +1446,13 @@ export default function App() {
   const [predictions, setPredictions] = useState([]);
   const [cards, setCards] = useState([]);
   const [ratings, setRatings] = useState([]);
+  useEffect(() => {
+    window.__duangBack = () => {
+      if (BACK_STACK.length) { BACK_STACK[BACK_STACK.length - 1](); return true; }
+      if (tab !== "compare") { setTab("compare"); return true; }
+      return false;
+    };
+  }, [tab]);
 
   const flash = (m) => { setToast(m); setTimeout(()=>setToast(""), 2200); };
 
@@ -2664,6 +2683,7 @@ function LineupPicker({ team, rows, onClose, onSave }) {
   const init = team?.lineup || { start:[], sub:[] };
   const [start, setStart] = useState(init.start || []);
   const [confirmed, setConfirmed] = useState(!!init.confirmed);
+  useBackClose(onClose);
   const stateOf = (id) => start.includes(id) ? "start" : "out";
   const cycle = (id) => {
     if (stateOf(id) === "out") {
@@ -8290,6 +8310,12 @@ function BackupBox({ teams, bare }) {
   const save = async () => {
     try {
       const data = await store.dump(backupKeys(teams));
+      if (window.DuangAndroid && window.DuangAndroid.saveFile) {
+        window.DuangAndroid.saveFile(`duangbon-backup-${todayISO()}.json`,
+          JSON.stringify({ app:"duangbon", at:new Date().toISOString(), data }, null, 1));
+        setMsg(`เลือกที่เก็บไฟล์ในหน้าถัดไป · ${Object.keys(data).length} รายการ`);
+        return;
+      }
       const blob = new Blob([JSON.stringify({ app:"duangbon", at:new Date().toISOString(), data }, null, 1)],
         { type:"application/json" });
       const url = URL.createObjectURL(blob);
@@ -8438,6 +8464,7 @@ function SquadEditor({ team, players, day, onSave, onMeta, onDelete, onClose }) 
   const [open, setOpen] = useState(null);
   const [draft, setDraft] = useState(null);
   useEffect(()=>{ setList(players); }, [players]);
+  useBackClose(onClose);
 
   const commit = (next) => { setList(next); onSave(next); };
   const rows = list.map(p=>({ p, s: scorePlayer(p, day, null) }))
@@ -8533,6 +8560,7 @@ function SquadEditor({ team, players, day, onSave, onMeta, onDelete, onClose }) 
 
 function PlayerSheet({ p, onClose, onSave, onRemove }) {
   const [f, setF] = useState({ ...p });
+  useBackClose(onClose);
   const set = (k)=>(e)=>setF({ ...f, [k]:e.target.value });
   const pv = f.b ? fourPillars(f.b, f.time||null) : null;
   return (
