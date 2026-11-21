@@ -1,3 +1,51 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── ชุดสี: สว่างนวลตอนกลางวัน มืดนุ่มตอนกลางคืน ตามการตั้งค่ามือถือ ──
+   ส่วนติดต่อผู้ใช้ทั้งหมดอ้างตัวแปรพวกนี้ ห้ามใส่สี hex ตรง ๆ ในคอมโพเนนต์
+   (สีเสื้อ สีธาตุ สีใบเหลือง-แดง เป็นข้อมูล ไม่ใช่ธีม — อยู่ในตารางข้อมูลแยก) */
+:root {
+  color-scheme: light dark;
+  --bg:#F6F3EE; --sunk:#EEE9E1; --card:#FFFFFF; --card-2:#F3EFE8;
+  --line:#E7E1D7; --line-2:#D6CEC1;
+  --text-strong:#1F1E1C; --text:#3A3835; --text-2:#5F5A54; --muted:#857F78;
+  --accent:#957A42; --warn:#8A6A2A; --warn-bg:#F5ECD8;
+  --brand:#B4624F; --on-brand:#FFFFFF;
+  --good:#4E8763; --good-bg:#E4EFE7; --bad:#B4624F; --bad-bg:#F6E5E0;
+  --shadow:0 1px 2px rgba(60,50,40,.06), 0 1px 1px rgba(60,50,40,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#1C1B19; --sunk:#171614; --card:#262421; --card-2:#2E2B28;
+    --line:#34312D; --line-2:#433F3A;
+    --text-strong:#F2EDE5; --text:#D9D3CA; --text-2:#ABA49A; --muted:#8C867D;
+    --accent:#C9AE74; --warn:#D9B872; --warn-bg:#3A3222;
+    --brand:#C97F6C; --on-brand:#1C1B19;
+    --good:#86B096; --good-bg:#26362C; --bad:#D08A78; --bad-bg:#3D2A25;
+    --shadow:none;
+  }
+}
+
+html, body { background: var(--bg); color: var(--text); }
+body { -webkit-tap-highlight-color: transparent; }
+.tabnum { font-variant-numeric: tabular-nums; }
+
+/* คลาสสีเดิมของ tailwind ที่ยังเหลือในโค้ด ให้ตามธีม */
+.text-stone-100 { color: var(--text-strong) !important; }
+.text-stone-200 { color: var(--text) !important; }
+.text-stone-400 { color: var(--text-2) !important; }
+.text-stone-500, .text-stone-600 { color: var(--muted) !important; }
+
+select option { background: var(--card) !important; color: var(--text) !important; }
+select optgroup { background: var(--sunk); color: var(--accent); }
+input::placeholder { color: var(--muted); }
+
+/* ส่วนพับเก็บ */
+details > summary { list-style: none; cursor: pointer; }
+details > summary::-webkit-details-marker { display: none; }
+details[open] > summary .chev { transform: rotate(90deg); }
+.chev { transition: transform .15s ease; display: inline-block; }
+
+/* มุมโค้งนุ่มขึ้นทั้งแอป (ของเดิม 2px ดูแข็ง) */
+.rounded-sm { border-radius: 8px; }

@@ -8,5 +8,6 @@ cp "$ROOT/bazi-football.jsx" app.jsx
 ./node_modules/.bin/esbuild entry.jsx --bundle --loader:.jsx=jsx --minify \
   --format=iife --target=es2018 --outfile=bundle.js
 ./node_modules/.bin/tailwindcss -c tw.config.js -i in.css -o out.css --minify
-python3 -I assemble.py "$ROOT/duang-bon.html" out.css bundle.js
+cat out.css fonts.css > all.css
+python3 -I assemble.py "$ROOT/duang-bon.html" all.css bundle.js
 echo "built $ROOT/duang-bon.html"

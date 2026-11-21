@@ -123,7 +123,7 @@ function branchRelation(a, b) {
 
 const gz = (p) => STEMS[p[0]] + BRANCHES[p[1]];
 const gzTh = (p) => STEM_TH[p[0]] + BRANCH_TH[p[1]];
-const TONE = { good:"#4E9C7A", mid:"#8B7C6C", bad:"#C0453D" };
+const TONE = { good:"var(--good)", mid:"var(--text-2)", bad:"var(--bad)" };
 
 /* สีของทีมบางสีเข้มเกินกว่าจะอ่านบนพื้นดำ — ดันความสว่างขึ้นเฉพาะตอนใช้เป็นตัวอักษรหรือแถบ */
 /* สีชุดสว่างมาก (ขาว เหลือง ฟ้าอ่อน) ต้องใช้ตัวอักษรสีเข้มทับ */
@@ -133,6 +133,12 @@ function lightKit(hex) {
   return 0.2126*f(0) + 0.7152*f(2) + 0.0722*f(4) > 0.42;
 }
 
+/* ธีมมืดหรือสว่าง ตามการตั้งค่ามือถือ */
+const isDark = () => typeof window !== "undefined" && !!window.matchMedia
+  && window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+/* ปรับสีเสื้อให้อ่านออกบนพื้นการ์ด — ธีมมืดดันให้สว่าง ธีมสว่างกดให้เข้ม
+   (เสื้อขาวบนพื้นขาวจะได้ไม่หายไป) */
 function readable(hex, minL = 60, minS = 45) {
   const h = (hex || "#888888").replace("#", "");
   let r = parseInt(h.slice(0,2),16)/255, g = parseInt(h.slice(2,4),16)/255, b = parseInt(h.slice(4,6),16)/255;
@@ -142,7 +148,7 @@ function readable(hex, minL = 60, minS = 45) {
     H = mx === r ? ((g-b)/d + (g<b?6:0)) : mx === g ? ((b-r)/d + 2) : ((r-g)/d + 4);
     H *= 60;
   }
-  L = Math.max(L, minL/100);
+  L = isDark() ? Math.max(L, minL/100) : Math.min(L, 0.38);
   if (S > 0.08) S = Math.max(S, minS/100);
   const c = (1 - Math.abs(2*L - 1)) * S, x = c * (1 - Math.abs(((H/60) % 2) - 1)), m = L - c/2;
   let [R,G,B] = H<60?[c,x,0]:H<120?[x,c,0]:H<180?[0,c,x]:H<240?[0,x,c]:H<300?[x,0,c]:[c,0,x];
@@ -1410,6 +1416,15 @@ function applySeedLineups(list, c) {
 export default function App() {
   const [teams, setTeams] = useState([]);          // [{slug,name,kit}]
   const [cache, setCache] = useState({});          // slug -> players[]
+  /* มือถือสลับธีมสว่าง/มืด → วาดใหม่ เพราะสีเสื้อที่อ่านได้คิดตามธีม (readable) */
+  const [, bumpTheme] = useState(0);
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const f = () => bumpTheme(x => x + 1);
+    mq.addEventListener ? mq.addEventListener("change", f) : mq.addListener(f);
+    return () => { mq.removeEventListener ? mq.removeEventListener("change", f) : mq.removeListener(f); };
+  }, []);
   const [fx, setFx] = useState({ home:null, away:null, date:todayISO(), time:"", dur:115, homeSlot:"home", awaySlot:"away" });
   const [tab, setTab] = useState("compare");
   const [editSlug, setEditSlug] = useState(null);
@@ -1727,9 +1742,9 @@ export default function App() {
     <Shell>
       <header className="px-4 pt-5 pb-3">
         <h1 className="text-stone-100 text-[17px]">ดวงจีนบอล</h1>
-        <p className="text-[11px] text-stone-500 mt-0.5">ฐานข้อมูล {teams.length} ทีม</p>
+        <p className="text-[12px] text-stone-500 mt-0.5">ฐานข้อมูล {teams.length} ทีม</p>
         {storageDown && (
-          <p className="text-[11px] mt-2 px-2.5 py-1.5 rounded-sm" style={{ background:"#3A2A10", color:"#D8A94A" }}>
+          <p className="text-[12px] mt-2 px-2.5 py-1.5 rounded-sm" style={{ background:"var(--warn-bg)", color:"var(--warn)" }}>
             เบราว์เซอร์นี้ไม่ยอมให้บันทึกถาวร ข้อมูลจะหายเมื่อปิดแอป
             — ลองเปิดไฟล์ตรงๆ ใน Chrome (ไม่ผ่านแอปจัดการไฟล์) หรือเลิกใช้โหมดไม่ระบุตัวตน
           </p>
@@ -1775,15 +1790,15 @@ export default function App() {
       )}
 
       {toast && (
-        <div className="fixed left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-[12px] z-50"
-          style={{ bottom:"calc(72px + env(safe-area-inset-bottom, 0px))", background:"#2A2320", color:"#E9E1D0" }}>
+        <div className="fixed left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-[13px] z-50"
+          style={{ bottom:"calc(72px + env(safe-area-inset-bottom, 0px))", background:"var(--card-2)", color:"var(--text-strong)" }}>
           {toast}
         </div>
       )}
 
       {/* แถบแท็บล่าง */}
       <nav className="fixed bottom-0 left-0 right-0 z-30"
-        style={{ background:"#1C1714", borderTop:"1px solid #302823",
+        style={{ background:"var(--bg)", borderTop:"1px solid var(--line)",
           paddingBottom:"env(safe-area-inset-bottom, 0px)" }}>
         <div className="max-w-md mx-auto flex">
           {[["compare","เปรียบเทียบ","⚖"],["season","ฤดูกาล 2026","◲"],["ucl","UCL","✦"],["stats","สถิติ","▤"],["teams","จัดการทีม","☰"]].map(([k,label,icon])=>{
@@ -1791,9 +1806,9 @@ export default function App() {
             return (
               <button key={k} onClick={()=>setTab(k)}
                 className="flex-1 min-w-0 flex flex-col items-center gap-0.5 py-2.5 relative">
-                {on && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5" style={{ background:"#8E1418" }} />}
-                <span className="text-[16px] leading-none" style={{ color: on?"#D8322C":"#5A4E44" }}>{icon}</span>
-                <span className="text-[9.5px] whitespace-nowrap" style={{ color: on?"#E9E1D0":"#6B5D50" }}>{label}</span>
+                {on && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5" style={{ background:"var(--brand)" }} />}
+                <span className="text-[17px] leading-none" style={{ color: on?"var(--brand)":"var(--muted)" }}>{icon}</span>
+                <span className="text-[12px] whitespace-nowrap" style={{ color: on?"var(--text-strong)":"var(--muted)" }}>{label}</span>
               </button>
             );
           })}
@@ -1803,7 +1818,7 @@ export default function App() {
   );
 }
 
-const OPT = { background:"#211B17", color:"#E9E1D0" };
+const OPT = { background:"var(--card)", color:"var(--text-strong)" };
 const HOURS = Array.from({length:24}, (_,i)=>String(i).padStart(2,"0"));
 const MINUTES = Array.from({length:12}, (_,i)=>String(i*5).padStart(2,"0"));
 const MINUTES_ALL = Array.from({length:60}, (_,i)=>String(i).padStart(2,"0"));
@@ -1812,19 +1827,19 @@ const MINUTES_ALL = Array.from({length:60}, (_,i)=>String(i).padStart(2,"0"));
 function TimePick({ value, onChange, fine }) {
   const [h, m] = (value || "").split(":");
   const set = (nh, nm) => onChange(nh && nm ? `${nh}:${nm}` : "");
-  const cls = "bg-transparent text-[12.5px] outline-none";
+  const cls = "bg-transparent text-[13px] outline-none";
   return (
-    <span className="flex items-center gap-0.5 shrink-0" style={{ color:"#C8A24A" }}>
+    <span className="flex items-center gap-0.5 shrink-0" style={{ color:"var(--accent)" }}>
       <select value={h || ""} onChange={e=>set(e.target.value, m || "00")} className={cls}>
         <option value="" style={OPT}>--</option>
         {HOURS.map(x=><option key={x} value={x} style={OPT}>{x}</option>)}
       </select>
-      <span style={{ color:"#6B5D50" }}>:</span>
+      <span style={{ color:"var(--muted)" }}>:</span>
       <select value={m || ""} onChange={e=>set(h || "00", e.target.value)} className={cls}>
         <option value="" style={OPT}>--</option>
         {(fine ? MINUTES_ALL : MINUTES).map(x=><option key={x} value={x} style={OPT}>{x}</option>)}
       </select>
-      <span className="text-[10.5px] ml-0.5" style={{ color:"#6B5D50" }}>น.</span>
+      <span className="text-[12px] ml-0.5" style={{ color:"var(--muted)" }}>น.</span>
     </span>
   );
 }
@@ -1834,16 +1849,9 @@ const sortTeams = (list) => [...list].sort((a,b)=>a.name.localeCompare(b.name, "
 
 const Shell = ({ children }) => (
   <div className="w-full"
-    style={{ minHeight:"100dvh", background:"#171310", colorScheme:"dark",
+    style={{ minHeight:"100dvh", background:"var(--bg)", color:"var(--text)",
       fontFamily:"'IBM Plex Sans Thai','Noto Sans Thai',system-ui,sans-serif" }}>
-    <style>{`
-      select { color-scheme: dark; }
-      select option { background:#211B17 !important; color:#E9E1D0 !important; }
-      select option:checked, select option:hover { background:#8E1418 !important; color:#FFF8EC !important; }
-      select optgroup { background:#171310; color:#C8A24A; }
-      input[type=date], input[type=time] { color-scheme: dark; }
-      input::placeholder { color:#5A4E44; }
-    `}</style>
+    {/* ชุดสีสองธีมอยู่ใน build/in.css */}
     <div className="max-w-md mx-auto" style={{ paddingBottom:"calc(76px + env(safe-area-inset-bottom, 0px))" }}>{children}</div>
   </div>
 );
@@ -2015,6 +2023,163 @@ function analyseMatch(homeTeam, awayTeam, fxLike, cache) {
 }
 
 /* ═══════════ หน้าเปรียบเทียบ ═══════════ */
+/* ═══════════ สรุปนัดนี้: ข้อความสั้น + ตารางศาสตร์ + ตารางคาดผล + ใบ/เตะมุม ═══════════
+   ทุกตัวเลขมาจากฟังก์ชันเดียวกับส่วนรายละเอียดด้านล่าง ไม่ได้คิดใหม่ */
+function MatchSummary({ A, B, V, gap, day, local, fx, results, cA, cB, ready }) {
+  const hName = A.team.name, aName = B.team.name;
+  const key = ((local && local.date) || fx.date) + "|" + hName;
+  const raw = ODDS_BY.get(key) || null;
+  const mp = marketProbs(raw);
+  const mg = useMemo(() => mp ? marketGrid(mp) : null, [key, mp && mp.pH]);
+  const po = useMemo(() => poissonForecast(computePoisson(results || []), hName, aName), [results, hName, aName]);
+  const base = useMemo(() => mg || (po ? scoreGrid(po.lh, po.la) : null), [mg, po]);
+  const tg = useMemo(() => base ? tiltedGrid(base, gap) : null, [base, gap]);
+  const sm = useMemo(() => sideModel(), []);
+  const sf = useMemo(() => sideForecast(sm, hName, aName), [sm, hName, aName]);
+  const schools = useMemo(() => schoolResults(A, B, day, local, gap), [A, B, day, local, gap]);
+
+  const hc = teamCode(hName), ac = teamCode(aName);
+  const EPS = 0.01;
+  const rows = schools.map(sc => {
+    const nz = (v) => v >= 0 ? v / sc.hi : v / Math.abs(sc.lo);
+    const d = nz(sc.a) - nz(sc.b);
+    return { sc, side: sc.shared ? 0 : (d > EPS ? 1 : d < -EPS ? -1 : 0) };
+  });
+  const vote = rows.filter(r => !r.sc.shared);
+  const nA = vote.filter(r => r.side > 0).length, nB = vote.filter(r => r.side < 0).length;
+
+  /* ตลาดเชียร์ใคร */
+  const mFav = mg ? (mg.pH >= mg.pA ? (mg.pH >= mg.pD ? "H" : "D") : (mg.pA >= mg.pD ? "A" : "D")) : null;
+  const omenFav = V.tie ? null : (V.winner === A ? "H" : "A");
+  const top = tg ? tg.top[0] : null;
+
+  const lines = [];
+  if (mg) lines.push(mFav === "D" ? `ตลาดมองว่าสูสี เสมอมีโอกาสสูงสุด ${pct(mg.pD)}`
+      : `ตลาดให้ ${mFav === "H" ? hName : aName} เป็นต่อ ชนะ ${pct(mFav === "H" ? mg.pH : mg.pA)}`);
+  lines.push((V.tie ? "ดวงรวมสูสี ไม่เข้าข้างใคร" : `ดวงรวมเข้าทาง ${V.winner.team.name} ห่าง ${Math.abs(gap).toFixed(2)} แต้ม`)
+    + (vote.length ? (nA && nB ? ` · ศาสตร์ขัดกันเอง (${nA} ต่อ ${nB})` : (nA || nB) === vote.length ? ` · ทุกศาสตร์ชี้ทางเดียวกัน` : "") : "")
+    + (mFav && omenFav && mFav !== "D" ? (mFav === omenFav ? " · ตรงกับตลาด" : " · สวนทางตลาด") : ""));
+  if (top) lines.push(`สกอร์ที่น่าจะเป็นที่สุด ${top.h}–${top.a} (${pct(top.p)})`
+    + (sf ? ` · ใบราว ${sf.cardTot.toFixed(1)} · เตะมุมราว ${sf.cornerTot.toFixed(1)}` : ""));
+
+  const sideCell = (s) => s > 0 ? <span style={{ color:cA }}>{hc}</span> : s < 0 ? <span style={{ color:cB }}>{ac}</span>
+    : <span style={{ color:"var(--muted)" }}>เสมอ</span>;
+  const win = V.tie ? 0 : (V.winner === A ? 1 : -1);
+
+  return (<>
+    {/* ── สรุปสั้น ── */}
+    <section className="rounded-xl px-4 py-4" style={{ background:"var(--card)", border:"1px solid var(--line)", boxShadow:"var(--shadow)" }}>
+      <p className="text-[12px]" style={{ color:"var(--muted)" }}>สรุปนัดนี้</p>
+      <p className="text-[22px] leading-snug mt-0.5" style={{ color:"var(--text-strong)" }}>
+        {V.tie ? "ดวงสูสี ไม่เข้าข้างใคร" : <>ดวงเข้าทาง <span style={{ color: V.winner === A ? cA : cB }}>{V.winner.team.name}</span></>}
+      </p>
+      {tg && (
+        <div className="grid grid-cols-3 gap-2 mt-3">
+          {[[`${hc} ชนะ`, tg.pH, cA], ["เสมอ", tg.pD, "var(--text-strong)"], [`${ac} ชนะ`, tg.pA, cB]].map(([l, v, c], i) => (
+            <div key={i} className="rounded-lg py-2 text-center" style={{ background:"var(--card-2)" }}>
+              <p className="text-[22px] tabnum leading-tight" style={{ color:c }}>{pct(v)}</p>
+              <p className="text-[12px]" style={{ color:"var(--muted)" }}>{l}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {tg && <p className="text-[12px] mt-1.5" style={{ color: mg ? "var(--muted)" : "var(--warn)" }}>{mg ? "โอกาสจากราคาตลาด เอียงตามดวงเล็กน้อย" : "ยังไม่มีราคาตลาด · ใช้สถิติของแอปซึ่งแม่นน้อยกว่าตลาด"}</p>}
+      <ul className="mt-2.5 space-y-1">
+        {lines.map((t, i) => (
+          <li key={i} className="text-[13px] leading-relaxed flex gap-2" style={{ color:"var(--text)" }}>
+            <span style={{ color:"var(--muted)" }}>·</span><span>{t}</span>
+          </li>
+        ))}
+      </ul>
+      {!ready && (
+        <p className="text-[12px] mt-2 px-2.5 py-1.5 rounded-lg" style={{ background:"var(--warn-bg)", color:"var(--warn)" }}>
+          {[A, B].filter(x => !x.hasLineup).map(x => x.team.name).join(" · ")} ยังไม่มีตัวจริง คิดจากทั้งทีม
+        </p>
+      )}
+    </section>
+
+    {/* ── ตาราง 1: คะแนนแต่ละศาสตร์ ── */}
+    <Card title="คะแนนแต่ละศาสตร์" note="บวก = ดวงหนุน">
+      <table className="w-full">
+        <thead><tr><TH>ศาสตร์</TH><TH right w="62px"><span style={{ color:cA }}>{hc}</span></TH>
+          <TH right w="62px"><span style={{ color:cB }}>{ac}</span></TH><TH right w="64px">เข้าทาง</TH></tr></thead>
+        <tbody>
+          {rows.map(({ sc, side }) => (
+            <tr key={sc.id}>
+              <TD>{sc.name.replace(/\s*\(.*\)\s*$/, "")}</TD>
+              {sc.shared
+                ? <><TD right>{sgn(sc.a)}</TD><TD right color="var(--muted)">ใช้ร่วม</TD><TD right color="var(--muted)">—</TD></>
+                : <><TD right>{sgn(sc.a)}</TD><TD right>{sgn(sc.b)}</TD><TD right>{sideCell(side)}</TD></>}
+            </tr>
+          ))}
+          <tr>
+            <TD strong>รวมดวง (คะแนนแอป)</TD>
+            <TD right strong color={win > 0 ? cA : undefined}>{sgn(A.total)}</TD>
+            <TD right strong color={win < 0 ? cB : undefined}>{sgn(B.total)}</TD>
+            <TD right>{sideCell(win)}</TD>
+          </tr>
+        </tbody>
+      </table>
+    </Card>
+
+    {/* ── ตาราง 2: คาดผลจากราคาต่อรอง ── */}
+    {tg && (
+      <Card title={mg ? "คาดผลจากราคาต่อรอง" : "คาดผลจากสถิติ"} note={mg ? `ค่าต๋ง ${(mp.margin * 100).toFixed(1)}% ตัดแล้ว` : "ไม่มีราคาตลาด"}>
+        <table className="w-full">
+          <thead><tr><TH>ผล</TH>
+            {mg && <><TH right w="54px">ราคา</TH><TH right w="56px">ตลาด</TH></>}
+            <TH right w="64px">{mg ? "รวมดวง" : "คาด"}</TH></tr></thead>
+          <tbody>
+            {[[`${hName} ชนะ`, raw && raw.oH, mg && mg.pH, tg.pH],
+              ["เสมอ", raw && raw.oD, mg && mg.pD, tg.pD],
+              [`${aName} ชนะ`, raw && raw.oA, mg && mg.pA, tg.pA],
+              ["สูงกว่า 2.5 ลูก", raw && raw.ov25, mg && mg.over25, tg.over25],
+              ["ยิงทั้งคู่", null, mg && mg.btts, tg.btts]].map(([l, o, m, t], i) => (
+              <tr key={i}>
+                <TD>{l}</TD>
+                {mg && <><TD right color="var(--muted)">{o ? Number(o).toFixed(2) : "—"}</TD><TD right>{pct(m)}</TD></>}
+                <TD right strong>{pct(t)}</TD>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="text-[12px] mt-3 mb-1.5" style={{ color:"var(--muted)" }}>สกอร์ที่น่าจะเป็น</p>
+        <div className="flex gap-2">
+          {tg.top.slice(0, 3).map((c, i) => (
+            <div key={i} className="flex-1 rounded-lg py-2 text-center" style={{ background: i ? "var(--card-2)" : "var(--sunk)" }}>
+              <p className="text-[17px] tabnum" style={{ color:"var(--text-strong)" }}>{c.h}–{c.a}</p>
+              <p className="text-[12px] tabnum" style={{ color:"var(--muted)" }}>{pct(c.p)}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-[12px] mt-2.5 leading-relaxed" style={{ color:"var(--muted)" }}>
+          {mg ? "ตลาด = ราคาเฉลี่ยหลายเจ้าแปลงเป็นโอกาส · รวมดวง = ตลาดที่เอียงตามคะแนนดวง (เอียงน้อยมาก เพราะทดสอบแล้วดวงไม่เพิ่มความแม่นเหนือตลาด)"
+              : "ใช้สถิติยิง-เสียของฤดูกาลนี้ ซึ่งทดสอบแล้วแม่นน้อยกว่าราคาตลาด"}
+        </p>
+      </Card>
+    )}
+
+    {/* ── ตาราง 3: ใบเหลือง-แดง และเตะมุม ── */}
+    {sf && (
+      <Card title="ใบเหลือง-แดง และเตะมุม" note="ค่าคาดต่อนัด">
+        <table className="w-full">
+          <thead><tr><TH></TH><TH right w="46px"><span style={{ color:cA }}>{hc}</span></TH>
+            <TH right w="46px"><span style={{ color:cB }}>{ac}</span></TH><TH right w="46px">รวม</TH><TH right w="96px">โอกาสเกิน</TH></tr></thead>
+          <tbody>
+            <tr><TD>ใบเหลือง-แดง</TD><TD right>{sf.cardH.toFixed(1)}</TD><TD right>{sf.cardA.toFixed(1)}</TD>
+              <TD right strong>{sf.cardTot.toFixed(1)}</TD><TD right>4.5 ใบ · <b className="font-medium" style={{ color:"var(--text-strong)" }}>{pct(overProb(sf.cardTot, 4.5))}</b></TD></tr>
+            <tr><TD>เตะมุม</TD><TD right>{sf.cornerH.toFixed(1)}</TD><TD right>{sf.cornerA.toFixed(1)}</TD>
+              <TD right strong>{sf.cornerTot.toFixed(1)}</TD><TD right>9.5 ลูก · <b className="font-medium" style={{ color:"var(--text-strong)" }}>{pct(overProb(sf.cornerTot, 9.5))}</b></TD></tr>
+          </tbody>
+        </table>
+        <p className="text-[12px] mt-2.5 leading-relaxed" style={{ color:"var(--muted)" }}>
+          ไม่มีราคาตลาดของสองรายการนี้ ใช้สถิติ {sf.n} นัดในฤดูกาลนี้ · เตะมุมใช้ค่าเฉลี่ยลีกเพราะแม่นกว่ารายทีม · เส้นอื่นดูได้ในอัตราต่อรองเต็มด้านล่าง
+        </p>
+      </Card>
+    )}
+  </>);
+}
+
 function Compare({ day, local, fx, setFixture, teams, cache, results, predictions, onSavePredict, home, away, onGoTeams, onLineup }) {
   const [pick, setPick] = useState(null);
   const dayEl = STEM_EL[day.d[0]];
@@ -2030,9 +2195,9 @@ function Compare({ day, local, fx, setFixture, teams, cache, results, prediction
         <div className="flex items-start gap-2">
           {[["home","เจ้าบ้าน"],["away","ทีมเยือน"]].map(([key,role],i)=>(
             <div key={key} className={"flex-1 min-w-0 "+(i?"text-right":"")}>
-              <p className="text-[10px]" style={{ color:"#6B5D50" }}>{role}</p>
+              <p className="text-[12px]" style={{ color:"var(--muted)" }}>{role}</p>
               <select value={fx[key]||""} onChange={e=>setFixture({[key]:e.target.value})}
-                className={"w-full bg-transparent text-[13.5px] text-stone-100 outline-none "+(i?"text-right":"")}>
+                className={"w-full bg-transparent text-[15px] text-stone-100 outline-none "+(i?"text-right":"")}>
                 <option value="" style={OPT}>— เลือก —</option>
                 {sortTeams(teams).map(t=><option key={t.slug} value={t.slug} style={OPT}>{t.name}</option>)}
               </select>
@@ -2040,9 +2205,9 @@ function Compare({ day, local, fx, setFixture, teams, cache, results, prediction
           ))}
         </div>
       </Step>
-      <div className="p-5 rounded-sm text-center" style={{ background:"#211B17", border:"1px dashed #3A302A" }}>
-        <p className="text-[13px] text-stone-400">เลือกครบสองทีมแล้วขั้นตอนที่เหลือจะขึ้นมาเอง</p>
-        <button onClick={onGoTeams} className="mt-3 px-4 py-2 rounded-sm text-[12.5px]" style={{ background:"#8E1418", color:"#FBF3E2" }}>
+      <div className="p-5 rounded-sm text-center" style={{ background:"var(--card)", border:"1px dashed var(--line)" }}>
+        <p className="text-[15px] text-stone-400">เลือกครบสองทีมแล้วขั้นตอนที่เหลือจะขึ้นมาเอง</p>
+        <button onClick={onGoTeams} className="mt-3 px-4 py-2 rounded-sm text-[13px]" style={{ background:"var(--brand)", color:"var(--on-brand)" }}>
           ไปเพิ่มทีมคู่แข่ง
         </button>
       </div>
@@ -2061,160 +2226,84 @@ function Compare({ day, local, fx, setFixture, teams, cache, results, prediction
   return (
     <div className="px-4 space-y-3">
 
-      <Step n="1" title="เลือกทีม">
-        <div className="flex items-start gap-2">
-          {[[fx.home,"home","เจ้าบ้าน",false],[fx.away,"away","ทีมเยือน",true]].map(([slug,key,role,right],i)=>(
+      {/* ── คู่แข่ง ชุด วันเวลา (แก้ได้ตรงนี้) ── */}
+      <section className="rounded-xl px-4 py-3" style={{ background:"var(--card)", border:"1px solid var(--line)", boxShadow:"var(--shadow)" }}>
+        <div className="flex items-center gap-2">
+          {[[fx.home,"home","homeSlot",A,false],[fx.away,"away","awaySlot",B,true]].map(([slug,key,slot,S,right],i)=>(
             <React.Fragment key={key}>
               {i===1 && (
                 <button onClick={()=>setFixture({ home:fx.away, away:fx.home, homeSlot:"home", awaySlot:"away" })}
-                  className="shrink-0 w-8 h-8 mt-3 rounded-sm text-[13px]" style={{ background:"#2A2320", color:"#C8A24A" }}>⇄</button>
+                  aria-label="สลับเหย้าเยือน"
+                  className="shrink-0 w-8 h-8 rounded-full text-[15px]" style={{ background:"var(--card-2)", color:"var(--text-2)" }}>⇄</button>
               )}
               <div className={"flex-1 min-w-0 "+(right?"text-right":"")}>
-                <p className="text-[10px]" style={{ color:"#6B5D50" }}>{role}</p>
+                <p className="text-[12px]" style={{ color:"var(--muted)" }}>{right?"ทีมเยือน":"เจ้าบ้าน"}</p>
                 <select value={slug||""} onChange={e=>setFixture({[key]:e.target.value})}
-                  className={"w-full bg-transparent text-[13.5px] text-stone-100 outline-none "+(right?"text-right":"")}>
+                  className={"w-full bg-transparent text-[17px] font-medium outline-none truncate "+(right?"text-right":"")}
+                  style={{ color:"var(--text-strong)" }}>
                   {sortTeams(teams).map(t=><option key={t.slug} value={t.slug} style={OPT}>{t.name}</option>)}
                 </select>
+                <div className={"flex items-center gap-1.5 mt-1 "+(right?"justify-end":"")}>
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background:S.kit.hex, boxShadow:"0 0 0 1px var(--line-2)" }} />
+                  <select value={fx[slot] || (slot==="homeSlot"?"home":"away")}
+                    onChange={e=>setFixture({ [slot]: e.target.value })}
+                    className="bg-transparent text-[12px] outline-none max-w-[110px] truncate" style={{ color:"var(--text-2)" }}>
+                    {SLOTS.map(([v,l])=><option key={v} value={v} style={OPT}>{l}</option>)}
+                  </select>
+                  <span className="text-[12px] tabnum" style={{ color: S.kv.w>0?TONE.good:S.kv.w<0?TONE.bad:TONE.mid }}>
+                    {S.kv.w>0?"+":""}{S.kv.w}
+                  </span>
+                </div>
               </div>
             </React.Fragment>
           ))}
         </div>
-      </Step>
+        <div className="flex items-center gap-2 mt-3 pt-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+          <input type="date" value={fx.date} onChange={e=>setFixture({date:e.target.value})}
+            className="flex-1 min-w-0 bg-transparent text-[13px] outline-none" style={{ color:"var(--text)" }} />
+          <TimePick value={fx.time||""} onChange={v=>setFixture({time:v})} />
+          <span className="text-[12px]" style={{ color:"var(--muted)" }}>ไทย</span>
+          {fx.time && <button onClick={()=>setFixture({time:""})} className="text-[12px]" style={{ color:"var(--muted)" }}>ล้าง</button>}
+        </div>
+        <p className="text-[12px] mt-1 leading-relaxed" style={{ color: local.shifted ? "var(--warn)" : "var(--muted)" }}>
+          {local.time
+            ? `เวลาที่สนาม ${local.date} ${local.time} น.${local.shifted ? " · คนละวันกับเวลาไทย ระบบคิดจากวันที่สนาม" : ""}`
+            : "ยังไม่ใส่เวลาเตะ ระบบคิดจากวันที่อย่างเดียว ไม่นับยาม"}
+        </p>
+      </section>
 
-      <Step n="2" title="เลือกชุดที่ใส่">
-        {[[A,"homeSlot"],[B,"awaySlot"]].map(([S,key],i)=>(
-          <div key={key} className="py-2" style={{ borderTop: i?"1px solid #2A2320":"none" }}>
-            <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-sm shrink-0 border" style={{ background:S.kit.hex, borderColor:"rgba(255,255,255,.2)" }} />
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px]" style={{ color:"#6B5D50" }}>{S.team.name}</p>
-                <p className="text-[12.5px] text-stone-200 truncate">{S.kit.label}</p>
-              </div>
-              <select value={fx[key] || (key==="homeSlot"?"home":"away")}
-                onChange={e=>setFixture({ [key]: e.target.value })}
-                className="bg-transparent text-[12px] outline-none shrink-0" style={{ color:"#C8A24A" }}>
-                {SLOTS.map(([v,l])=><option key={v} value={v} style={OPT}>{l}</option>)}
-              </select>
+      <MatchSummary A={A} B={B} V={V} gap={gap} day={day} local={local} fx={fx} results={results} cA={cA} cB={cB} ready={ready} />
+
+      {/* ── ปัจจัยรายด้าน ── */}
+      <Card title="ปัจจัยรายด้าน" note="ลูกศรชี้ฝั่งที่ได้เปรียบ" pad={false}>
+        <div className="pb-1">
+        {V.rows.map((r,idx)=>(
+          <div key={idx} className="flex items-center gap-2 px-3 py-2" style={{ borderTop:"1px solid var(--line)" }}>
+            <div className="flex-1 min-w-0 text-right">
+              <p className="text-[13px] truncate" style={{ color: TONE[r.a.tone] }}>{r.a.text}</p>
             </div>
-            <div className="flex items-baseline gap-2 mt-1 ml-[38px]">
-              <span className="text-[11px]" style={{ color:"#7A6A57" }}>ธาตุ{EL[S.kit.el]} · {S.kv.note}</span>
-              <span className="text-[11.5px] ml-auto" style={{ color: S.kv.w>0?TONE.good:S.kv.w<0?TONE.bad:TONE.mid }}>
-                {S.kv.w>0?"+":""}{S.kv.w} {S.kv.label}
-              </span>
+            <div className="w-[62px] shrink-0 text-center">
+              <p className="text-[12px]" style={{ color:"var(--muted)" }}>{r.head}</p>
+              <p className="text-[12px]" style={{ color: r.win===0 ? "var(--muted)" : (r.win<0 ? cA : cB) }}>
+                {r.win===0 ? "เสมอ" : (r.win<0 ? "◀" : "▶")}
+              </p>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] truncate" style={{ color: TONE[r.b.tone] }}>{r.b.text}</p>
             </div>
           </div>
         ))}
-      </Step>
 
-      <Step n="3" title="เลือกวันและเวลา">
-        <div className="flex items-center gap-2 pb-2">
-          <span className="text-[10.5px] shrink-0" style={{ color:"#6B5D50" }}>เวลาไทย</span>
-          <input type="date" value={fx.date} onChange={e=>setFixture({date:e.target.value})}
-            className="flex-1 bg-transparent text-[12.5px] outline-none" style={{ color:"#C8A24A" }} />
-          <TimePick value={fx.time||""} onChange={v=>setFixture({time:v})} />
-          {fx.time && <button onClick={()=>setFixture({time:""})} className="text-[11px]" style={{ color:"#6B5D50" }}>ล้าง</button>}
         </div>
-        {fx.time && (
-          <div className="flex items-center gap-2 pb-2">
-            <span className="text-[10.5px] shrink-0" style={{ color:"#6B5D50" }}>ช่วงแข่ง</span>
-            <select value={fx.dur || 115} onChange={e=>setFixture({dur:Number(e.target.value)})}
-              className="flex-1 bg-transparent text-[12px] outline-none" style={{ color:"#C8A24A" }}>
-              {DURATIONS.map(([v,l])=><option key={v} value={v} style={OPT}>{l}</option>)}
-            </select>
-          </div>
-        )}
-        <p className="text-[11px] leading-relaxed pb-2" style={{ color: local.shifted ? "#D8A94A" : "#6B5D50" }}>
-          {local.time
-            ? `เวลาที่สนาม ${local.date} ${local.time} น.${local.shifted ? " (คนละวันกับเวลาไทย ระบบคิดจากวันที่สนาม)" : ""}`
-            : "ยังไม่ใส่เวลา ระบบจะคิดจากวันที่ที่กรอกโดยตรง"}
-        </p>
+      </Card>
 
-        <div className="rounded-sm flex items-stretch overflow-hidden" style={{ background:"#E9E1D0" }}>
-          <div className="px-4 py-3 text-center" style={{ background:"#8E1418" }}>
-            <div style={{ fontFamily:"'Songti SC','Noto Serif SC','SimSun',serif", fontSize:"34px", lineHeight:1, color:"#F2D89A" }}>
-              <div>{STEMS[day.d[0]]}</div><div>{BRANCHES[day.d[1]]}</div>
-            </div>
-          </div>
-          <div className="flex-1 px-3 py-2.5 text-[11.5px]" style={{ color:"#3A2E24" }}>
-            <p className="text-[13px] mb-1">วัน{gzTh(day.d)} · ปี{ZODIAC[day.d[1]]} ธาตุ{EL[dayEl]}</p>
-            <p style={{ color:"#7A6A57" }}>{gz(day.y)} {gz(day.m)}</p>
-            {segs && (
-              <p className="mt-1" style={{ color:"#3A2E24" }}>
-                คาบ{segs.length>1?" 2 ยาม":"ยามเดียว"} — {segs.map(sg=>
-                  `${STEMS[sg.stem]}${BRANCHES[sg.b]} ยาม${ZODIAC[sg.b]} ${Math.round(sg.share*100)}%`).join(" · ")}
-              </p>
-            )}
-            <div className="flex items-center gap-3 mt-1.5">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full border" style={{ background:EL_HEX[luckyEl], borderColor:"rgba(0,0,0,.3)" }} />
-                สีเฮง {EL[luckyEl]}
-              </span>
-              <span style={{ color:"#8E1418" }}>ชงปี{ZODIAC[clashB]}</span>
-            </div>
-          </div>
+      <Fold title="ตัวจริง 11 คน" meta={`${teamCode(A.team.name)} ${A.starters.length}/11 · ${teamCode(B.team.name)} ${B.starters.length}/11`}>
+        <div className="px-3 py-2">
+          <LineupRow A={A} B={B} cA={cA} cB={cB} onPick={setPick} />
         </div>
+      </Fold>
 
-        <div className="mt-2 pt-2 text-[11.5px] leading-relaxed" style={{ borderTop:"1px solid #2A2320", color:"#A79684" }}>
-          {travel
-            ? <>สนาม {A.team.venue?.name} · {B.team.name} เดินทางไปทาง{DIR_TH[travel.br]} {travel.km.toFixed(0)} กม. —
-                ทิศนี้ <span style={{ color:REL_HEX[travel.rel.key] }}>{travel.rel.label}</span>กับวัน
-                ({travel.effect>0?"+":""}{travel.effect.toFixed(2)})</>
-            : "ใส่พิกัดสนามทั้งสองทีมในหน้าจัดการทีม เพื่อคำนวณทิศเดินทาง"}
-        </div>
-      </Step>
-
-      <Step n="4" title="เลือก 11 ตัวจริง">
-        <LineupRow A={A} B={B} cA={cA} cB={cB} onPick={setPick} />
-      </Step>
-
-
-      {/* ── 6 ผลการคำนวณ ── */}
-      <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-        <div className="flex items-center gap-2 px-3 py-2" style={{ background:"#2A2320" }}>
-          <span className="w-5 h-5 rounded-full text-[11px] flex items-center justify-center shrink-0"
-            style={{ background:"#8E1418", color:"#FBF3E2" }}>6</span>
-          <span className="text-[12px]" style={{ color:"#C8A24A" }}>ผลการคำนวณ</span>
-          {!ready && <span className="text-[10.5px] ml-auto text-right" style={{ color:"#D8A94A" }}>
-            {[A,B].filter(x=>!x.hasLineup).map(x=>x.team.name).join(" · ")} ยังไม่จัดตัว คิดจากทั้งทีม</span>}
-        </div>
-
-        <div className="px-3 py-3" style={{ background: V.tie ? "#211B17" : (V.winner===A ? A.kit.hex : B.kit.hex) }}>
-          <p className="text-[15px]" style={{ color: V.tie ? "#C9BCAB" : (lightKit(V.winner.kit.hex) ? "#1A1512" : "#FFF8EC") }}>
-            {V.tie ? "สูสี ฤกษ์ไม่เข้าข้างใคร" : `วันนี้เข้าทาง ${V.winner.team.name}`}
-          </p>
-          <p className="text-[11.5px] mt-0.5" style={{ color: V.tie ? "#8B7C6C" : (lightKit(V.winner.kit.hex) ? "rgba(26,21,18,.75)" : "rgba(255,248,236,.85)") }}>
-            ห่างกัน {Math.abs(gap).toFixed(2)} แต้ม
-          </p>
-        </div>
-
-        <div className="px-3 py-3" style={{ borderTop:"1px solid #2A2320" }}>
-          <div className="flex items-end justify-between mb-2 gap-2">
-            <div className="flex-1 min-w-0">
-              <p className="text-[10.5px] truncate" style={{ color:"#8B7C6C" }}>{A.team.name}</p>
-              <p className="text-[19px] leading-tight" style={{ color:cA }}>{A.total>0?"+":""}{A.total.toFixed(2)}</p>
-            </div>
-            <span className="text-[10px] shrink-0 pb-1" style={{ color:"#6B5D50" }}>คะแนนรวม</span>
-            <div className="flex-1 min-w-0 text-right">
-              <p className="text-[10.5px] truncate" style={{ color:"#8B7C6C" }}>{B.team.name}</p>
-              <p className="text-[19px] leading-tight" style={{ color:cB }}>{B.total>0?"+":""}{B.total.toFixed(2)}</p>
-            </div>
-          </div>
-
-          <div className="relative h-7 rounded-sm overflow-hidden"
-            style={{ background:"#0E0B09", border:"1px solid #3A302A" }}>
-            <div className="absolute inset-y-0 transition-all duration-500"
-              style={{ background: lean>=0?cA:cB,
-                left: lean>=0 ? `${50-lean*50}%` : "50%", width:`${Math.abs(lean)*50}%` }} />
-            <div className="absolute inset-y-0 left-1/2 w-0.5 z-20" style={{ background:"#F0E6D2" }} />
-            <div className="absolute inset-0 flex items-center justify-center z-30">
-              <span className="text-[11px] px-2 py-0.5 rounded-full"
-                style={{ background:"rgba(14,11,9,.82)", color:"#E9E1D0" }}>
-                {Math.abs(gap) < 0.4 ? "สูสี" : `${gap>0?A.team.name:B.team.name} นำ ${Math.abs(gap).toFixed(2)}`}
-              </span>
-            </div>
-          </div>
-        </div>
-
+      <Fold title="Elo และบันทึกคำทำนาย" meta={saved ? "บันทึกแล้ว" : "ยังไม่บันทึก"}>
         <OmenElo A={A} B={B} gap={gap} teams={teams} results={results}
           rate={fx.omenRate ?? OMEN_RATE_DEFAULT} onRate={(v)=>setFixture({omenRate:v})} cA={cA} cB={cB}
           saved={saved}
@@ -2223,45 +2312,29 @@ function Compare({ day, local, fx, setFixture, teams, cache, results, prediction
             thaiDate: fx.date, thaiTime: fx.time,
             elo, rate: fx.omenRate ?? OMEN_RATE_DEFAULT, auto:false,
           }))} />
+      </Fold>
 
-        {V.rows.map((r,idx)=>(
-          <div key={idx} className="flex items-center gap-2 px-3 py-2" style={{ borderTop:"1px solid #2A2320" }}>
-            <div className="flex-1 min-w-0 text-right">
-              <p className="text-[12px] truncate" style={{ color: TONE[r.a.tone] }}>{r.a.text}</p>
-            </div>
-            <div className="w-[62px] shrink-0 text-center">
-              <p className="text-[10.5px]" style={{ color:"#6B5D50" }}>{r.head}</p>
-              <p className="text-[11px]" style={{ color: r.win===0 ? "#6B5D50" : (r.win<0 ? cA : cB) }}>
-                {r.win===0 ? "เสมอ" : (r.win<0 ? "◀" : "▶")}
-              </p>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] truncate" style={{ color: TONE[r.b.tone] }}>{r.b.text}</p>
-            </div>
-          </div>
-        ))}
-
-      <div style={{ borderTop:"1px solid #2A2320" }}>
-        <p className="px-3 py-1.5 text-[10.5px]" style={{ color:"#6B5D50" }}>ผู้จัดการทีม</p>
-        <div className="flex items-stretch gap-px" style={{ background:"#2A2320" }}>
+      <Fold title="ผู้จัดการทีม" meta={[A.mgr, B.mgr].map(m => m ? (m.p.n || m.p.th).split(" ").slice(-1)[0] : "—").join(" · ")}>
+      <div>
+        <div className="flex items-stretch gap-px" style={{ background:"var(--card-2)" }}>
           {[[A,cA],[B,cB]].map(([S,col],i)=>(
-            <div key={i} className="flex-1 min-w-0 p-3 text-center" style={{ background:"#211B17" }}>
+            <div key={i} className="flex-1 min-w-0 p-3 text-center" style={{ background:"var(--card)" }}>
               {S.mgr ? (<>
-                <p className="text-[12px] truncate" style={{ color:col }}>{S.mgr.p.n||S.mgr.p.th}</p>
+                <p className="text-[13px] truncate" style={{ color:col }}>{S.mgr.p.n||S.mgr.p.th}</p>
                 <div className="my-1" style={{ fontFamily:"'Songti SC','Noto Serif SC',serif", fontSize:"30px", lineHeight:1.1, color:EL_HEX[STEM_EL[S.mgr.s.pil.y[0]]] }}>
                   {gz(S.mgr.s.pil.y)}
                 </div>
-                <p className="text-[11px]" style={{ color:"#8B7C6C" }}>ปี{ZODIAC[S.mgr.s.pil.y[1]]} · {S.mgr.p.b}</p>
-                <p className="text-[11px] mt-1" style={{ color:REL_HEX[S.mgr.s.relY.key] }}>{S.mgr.s.relY.label}กับวัน</p>
-                <p className="text-[10.5px] mt-1" style={{ color:"#6B5D50" }}>
+                <p className="text-[12px]" style={{ color:"var(--text-2)" }}>ปี{ZODIAC[S.mgr.s.pil.y[1]]} · {S.mgr.p.b}</p>
+                <p className="text-[12px] mt-1" style={{ color:REL_HEX[S.mgr.s.relY.key] }}>{S.mgr.s.relY.label}กับวัน</p>
+                <p className="text-[12px] mt-1" style={{ color:"var(--muted)" }}>
                   เสาวัน {gz(S.mgr.s.pil.d)} · ธาตุ{EL[S.mgr.s.myEl]}
                 </p>
-                <p className="text-[10.5px]" style={{ color:REL_HEX[S.mgr.s.relD.key] }}>วันเกิด{S.mgr.s.relD.label}</p>
-                <p className="text-[13px] mt-1.5"
+                <p className="text-[12px]" style={{ color:REL_HEX[S.mgr.s.relD.key] }}>วันเกิด{S.mgr.s.relD.label}</p>
+                <p className="text-[15px] mt-1.5"
                   style={{ color: S.mgr.s.raw>0?TONE.good : S.mgr.s.raw<0?TONE.bad : TONE.mid }}>
                   {S.mgr.s.raw>0?"+":""}{(S.mgr.s.raw*0.5).toFixed(2)}
                 </p>
-              </>) : <p className="text-[11px] py-8" style={{ color:"#5A4E44" }}>ยังไม่มีข้อมูลโค้ช</p>}
+              </>) : <p className="text-[12px] py-8" style={{ color:"var(--muted)" }}>ยังไม่มีข้อมูลโค้ช</p>}
             </div>
           ))}
         </div>
@@ -2269,7 +2342,7 @@ function Compare({ day, local, fx, setFixture, teams, cache, results, prediction
           const h2h = branchRelation(A.mgr.s.pil.y[1], B.mgr.s.pil.y[1]);
           const dd = (A.mgr.s.raw - B.mgr.s.raw) * 0.5;
           return (
-            <div className="px-3 py-2.5 text-[11.5px] leading-relaxed" style={{ borderTop:"1px solid #2A2320", color:"#A79684" }}>
+            <div className="px-3 py-2.5 text-[13px] leading-relaxed" style={{ borderTop:"1px solid var(--line)", color:"var(--text)" }}>
               โค้ชต่อโค้ช ปี{ZODIAC[A.mgr.s.pil.y[1]]} เจอปี{ZODIAC[B.mgr.s.pil.y[1]]} —{" "}
               <span style={{ color:REL_HEX[h2h.key] }}>{h2h.label}</span>
               {Math.abs(dd) < 0.15
@@ -2281,45 +2354,88 @@ function Compare({ day, local, fx, setFixture, teams, cache, results, prediction
       </div>
 
 
+      </Fold>
+
+      <Fold title="จุดเด่น จุดด้อย">
         {/* จุดเด่น จุดด้อย */}
-        <div className="grid grid-cols-2 gap-px" style={{ background:"#2A2320", borderTop:"1px solid #2A2320" }}>
+        <div className="grid grid-cols-2 gap-px" style={{ background:"var(--card-2)", borderTop:"1px solid var(--line)" }}>
           {[[A,P.a],[B,P.b]].map(([S,pt],i)=>(
-            <div key={i} className="p-3" style={{ background:"#211B17" }}>
-              <p className="text-[12px] mb-2 truncate" style={{ color:readable(S.kit.hex) }}>{S.team.name}</p>
-              <p className="text-[10px] mb-1" style={{ color:TONE.good }}>จุดเด่น</p>
+            <div key={i} className="p-3" style={{ background:"var(--card)" }}>
+              <p className="text-[13px] mb-2 truncate" style={{ color:readable(S.kit.hex) }}>{S.team.name}</p>
+              <p className="text-[12px] mb-1" style={{ color:TONE.good }}>จุดเด่น</p>
               {pt.good.length ? pt.good.map((t,k)=>(
-                <p key={k} className="text-[11px] leading-relaxed mb-1" style={{ color:"#A79684" }}>· {t}</p>
-              )) : <p className="text-[11px] mb-1" style={{ color:"#5A4E44" }}>· ไม่มีจุดเด่นชัดเจน</p>}
-              <p className="text-[10px] mt-2 mb-1" style={{ color:TONE.bad }}>จุดด้อย</p>
+                <p key={k} className="text-[12px] leading-relaxed mb-1" style={{ color:"var(--text)" }}>· {t}</p>
+              )) : <p className="text-[12px] mb-1" style={{ color:"var(--muted)" }}>· ไม่มีจุดเด่นชัดเจน</p>}
+              <p className="text-[12px] mt-2 mb-1" style={{ color:TONE.bad }}>จุดด้อย</p>
               {pt.bad.length ? pt.bad.map((t,k)=>(
-                <p key={k} className="text-[11px] leading-relaxed mb-1" style={{ color:"#A79684" }}>· {t}</p>
-              )) : <p className="text-[11px]" style={{ color:"#5A4E44" }}>· ไม่มีจุดด้อยชัดเจน</p>}
+                <p key={k} className="text-[12px] leading-relaxed mb-1" style={{ color:"var(--text)" }}>· {t}</p>
+              )) : <p className="text-[12px]" style={{ color:"var(--muted)" }}>· ไม่มีจุดด้อยชัดเจน</p>}
             </div>
           ))}
         </div>
 
-        <p className="px-3 py-2.5 text-[12px] leading-relaxed"
-          style={{ borderTop:"1px solid #2A2320", background:"#1A1512", color:"#A79684" }}>
+        <p className="px-3 py-2.5 text-[13px] leading-relaxed"
+          style={{ borderTop:"1px solid var(--line)", background:"var(--sunk)", color:"var(--text)" }}>
           {V.advice}
         </p>
-      </div>
+      </Fold>
 
-      {pick && (
-        <LineupPicker
-          team={teams.find(t=>t.slug===pick)}
-          rows={(pick===A.team.slug?A:B).all}
-          onClose={()=>setPick(null)}
-          onSave={(lu)=>{ onLineup(pick, { ...lu, forDate: lu.confirmed ? fx.date : null }); setPick(null); }} />
-      )}
+      <Fold title="วันและฤกษ์" meta={`วัน${gzTh(day.d)} · ชงปี${ZODIAC[clashB]}`}>
+        <div className="px-3 py-3">
+          {fx.time && (
+            <div className="flex items-center gap-2 pb-2">
+              <span className="text-[12px] shrink-0" style={{ color:"var(--muted)" }}>ช่วงแข่ง</span>
+              <select value={fx.dur || 115} onChange={e=>setFixture({dur:Number(e.target.value)})}
+                className="flex-1 bg-transparent text-[13px] outline-none" style={{ color:"var(--text)" }}>
+                {DURATIONS.map(([v,l])=><option key={v} value={v} style={OPT}>{l}</option>)}
+              </select>
+            </div>
+          )}
+        <div className="rounded-sm flex items-stretch overflow-hidden" style={{ background:"var(--card-2)" }}>
+          <div className="px-4 py-3 text-center" style={{ background:"var(--brand)" }}>
+            <div style={{ fontFamily:"'Songti SC','Noto Serif SC','SimSun',serif", fontSize:"34px", lineHeight:1, color:"var(--on-brand)" }}>
+              <div>{STEMS[day.d[0]]}</div><div>{BRANCHES[day.d[1]]}</div>
+            </div>
+          </div>
+          <div className="flex-1 px-3 py-2.5 text-[13px]" style={{ color:"var(--text)" }}>
+            <p className="text-[15px] mb-1" style={{ color:"var(--text-strong)" }}>วัน{gzTh(day.d)} · ปี{ZODIAC[day.d[1]]} ธาตุ{EL[dayEl]}</p>
+            <p style={{ color:"var(--text-2)" }}>{gz(day.y)} {gz(day.m)}</p>
+            {segs && (
+              <p className="mt-1" style={{ color:"var(--text-2)" }}>
+                คาบ{segs.length>1?" 2 ยาม":"ยามเดียว"} — {segs.map(sg=>
+                  `${STEMS[sg.stem]}${BRANCHES[sg.b]} ยาม${ZODIAC[sg.b]} ${Math.round(sg.share*100)}%`).join(" · ")}
+              </p>
+            )}
+            <div className="flex items-center gap-3 mt-1.5">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full border" style={{ background:EL_HEX[luckyEl], borderColor:"rgba(0,0,0,.3)" }} />
+                สีเฮง {EL[luckyEl]}
+              </span>
+              <span style={{ color:"var(--brand)" }}>ชงปี{ZODIAC[clashB]}</span>
+            </div>
+          </div>
+        </div>
 
+        <div className="mt-2 pt-2 text-[13px] leading-relaxed" style={{ borderTop:"1px solid var(--line)", color:"var(--text)" }}>
+          {travel
+            ? <>สนาม {A.team.venue?.name} · {B.team.name} เดินทางไปทาง{DIR_TH[travel.br]} {travel.km.toFixed(0)} กม. —
+                ทิศนี้ <span style={{ color:REL_HEX[travel.rel.key] }}>{travel.rel.label}</span>กับวัน
+                ({travel.effect>0?"+":""}{travel.effect.toFixed(2)})</>
+            : "ใส่พิกัดสนามทั้งสองทีมในหน้าจัดการทีม เพื่อคำนวณทิศเดินทาง"}
+        </div>
+        </div>
+      </Fold>
 
-      <OddsPanel A={A} B={B} fx={fx} local={local} gap={gap} results={results} cA={cA} cB={cB} />
+      <Fold title="อัตราต่อรองเต็ม" meta="4 หัวข้อ · ทุกเส้น">
+        <OddsPanel A={A} B={B} fx={fx} local={local} gap={gap} results={results} cA={cA} cB={cB} bare />
+      </Fold>
 
-      <SchoolPanel A={A} B={B} day={day} local={local} gap={gap} cA={cA} cB={cB} />
+      <Fold title="รายละเอียดแต่ละศาสตร์" meta="กดดูที่มาของแต่ละศาสตร์">
+        <SchoolPanel A={A} B={B} day={day} local={local} gap={gap} cA={cA} cB={cB} bare />
+      </Fold>
 
-      {/* ที่มาของคะแนน */}
-      <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-        <p className="px-3 py-2 text-[11px]" style={{ background:"#2A2320", color:"#C8A24A" }}>ที่มาของคะแนน</p>
+      <Fold title="ที่มาของคะแนน">
+      <div>
         {[
           ["ปีเกิด × วันแข่ง","ชง −4 · ลงโทษ −2 · เบียน −1.5 · ทำลาย −0.5 · ซ้ำเสา −0.5 · ประสานอ่อน +1.2 · สามประสาน +2.5 · คู่ธาตุ +3 · ค่าเฉลี่ยทั้ง 11 คนถ่วง × 0.75 เพราะมีเปลี่ยนตัว","น้ำหนักเต็ม","tradition"],
           ["ปีเกิด × ปีที่แข่ง","太歲 เทพเจ้าประจำปี — ตำราถือว่าชงปีใหญ่กว่าชงวัน แต่คงที่ทั้งปี จึงถ่วงครึ่ง","× 0.5","tradition"],
@@ -2335,28 +2451,27 @@ function Compare({ day, local, fx, setFixture, teams, cache, results, prediction
           ["ทิศเดินทางทีมเยือน","ทิศจากสนามตัวเองไปสนามแข่ง แปลงเป็นกิ่งดิน แล้วเทียบกับวัน","× 0.2 × ระยะทาง","approx"],
           ["ได้เปรียบเจ้าบ้าน","ไม่ใช่หลักจีน เป็นปัจจัยฟุตบอลล้วน","+0.5 คงที่","house"]
         ].map((r,i)=>(
-          <div key={i} className="px-3 py-2" style={{ borderTop:"1px solid #2A2320" }}>
+          <div key={i} className="px-3 py-2" style={{ borderTop:"1px solid var(--line)" }}>
             <div className="flex items-baseline gap-2">
-              <span className="text-[12px] flex-1" style={{ color:"#E9E1D0" }}>{r[0]}</span>
-              <span className="text-[11px] shrink-0" style={{ color:"#C8A24A" }}>{r[2]}</span>
+              <span className="text-[13px] flex-1" style={{ color:"var(--text-strong)" }}>{r[0]}</span>
+              <span className="text-[12px] shrink-0" style={{ color:"var(--accent)" }}>{r[2]}</span>
             </div>
-            <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color:"#8B7C6C" }}>{r[1]}</p>
-            <span className="text-[9.5px]" style={{ color: r[3]==="tradition"?TONE.good : r[3]==="approx"?"#C8863B" : TONE.bad }}>
+            <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color:"var(--text-2)" }}>{r[1]}</p>
+            <span className="text-[12px]" style={{ color: r[3]==="tradition"?TONE.good : r[3]==="approx"?"var(--accent)" : TONE.bad }}>
               {r[3]==="tradition" ? "ตามตำรา" : r[3]==="approx" ? "ประมาณจากตำรา" : "ผมกำหนดเอง"}
             </span>
           </div>
         ))}
-        <p className="px-3 py-2.5 text-[11px] leading-relaxed"
-          style={{ borderTop:"1px solid #2A2320", background:"#1A1512", color:"#6B5D50" }}>
+        <p className="px-3 py-2.5 text-[12px] leading-relaxed"
+          style={{ borderTop:"1px solid var(--line)", background:"var(--sunk)", color:"var(--muted)" }}>
           ตัวเลขน้ำหนักคูณทั้งหมดเป็นการเทียบสัดส่วนที่ผมกำหนดเอง ตำราจีนบอกแค่ว่าอะไรแรงกว่าอะไร ไม่ได้ให้ตัวเลข
         </p>
       </div>
 
-      {/* คำอธิบายความสัมพันธ์ */}
-      <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-        <p className="px-3 py-2 text-[11px]" style={{ background:"#2A2320", color:"#C8A24A" }}>
-          ความสัมพันธ์ระหว่างปีเกิดกับวันแข่ง
-        </p>
+      </Fold>
+
+      <Fold title="ความสัมพันธ์ระหว่างปีเกิดกับวันแข่ง">
+      <div>
         {[
           { k:"liuhe", name:"คู่ธาตุ", cn:"\u516D\u5408", w:"+3",
             what:"นักษัตรสองตัวที่จับคู่กันแล้วกลมกลืน ดีที่สุดในบรรดาความสัมพันธ์",
@@ -2385,23 +2500,35 @@ function Compare({ day, local, fx, setFixture, teams, cache, results, prediction
             what:"อยู่ตรงข้ามกันพอดีในวงกลม 12 ตัว แรงที่สุดและเป็นข้อห้ามหลักของการดูฤกษ์",
             pairs:"หนู-ม้า · วัว-แพะ · เสือ-ลิง · กระต่าย-ไก่ · มังกร-สุนัข · งู-หมู" },
         ].map(r=>(
-          <div key={r.k} className="px-3 py-2.5" style={{ borderTop:"1px solid #2A2320" }}>
+          <div key={r.k} className="px-3 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
             <div className="flex items-baseline gap-2">
               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background:REL_HEX[r.k] }} />
-              <span className="text-[13px]" style={{ color:REL_HEX[r.k] }}>{r.name}</span>
-              <span style={{ fontFamily:"'Songti SC','Noto Serif SC',serif", fontSize:"12px", color:"#6B5D50" }}>{r.cn}</span>
-              <span className="ml-auto text-[12px]" style={{ color:REL_HEX[r.k] }}>{r.w}</span>
+              <span className="text-[15px]" style={{ color:REL_HEX[r.k] }}>{r.name}</span>
+              <span style={{ fontFamily:"'Songti SC','Noto Serif SC',serif", fontSize:"12px", color:"var(--muted)" }}>{r.cn}</span>
+              <span className="ml-auto text-[13px]" style={{ color:REL_HEX[r.k] }}>{r.w}</span>
             </div>
-            <p className="text-[11.5px] mt-1 ml-3.5 leading-relaxed" style={{ color:"#A79684" }}>{r.what}</p>
-            {r.pairs && <p className="text-[11px] mt-1 ml-3.5 leading-relaxed" style={{ color:"#6B5D50" }}>{r.pairs}</p>}
+            <p className="text-[13px] mt-1 ml-3.5 leading-relaxed" style={{ color:"var(--text)" }}>{r.what}</p>
+            {r.pairs && <p className="text-[12px] mt-1 ml-3.5 leading-relaxed" style={{ color:"var(--muted)" }}>{r.pairs}</p>}
           </div>
         ))}
       </div>
 
-      <p className="text-[10.5px] text-stone-600 leading-relaxed pb-4">
+      </Fold>
+
+      <p className="text-[12px] text-stone-600 leading-relaxed pb-4">
         คะแนน = ปีเกิดเทียบวันแข่ง + วันเกิดเทียบวันแข่ง (ครึ่งน้ำหนัก) + ธาตุประจำตัว
         ทีมรวม = เฉลี่ยผู้เล่น + สีชุด + ผู้จัดการ ดูสนุกได้ แต่อย่าใช้ตัดสินใจอะไรที่เสียเงิน
       </p>
+
+      {pick && (
+        <LineupPicker
+          team={teams.find(t=>t.slug===pick)}
+          rows={(pick===A.team.slug?A:B).all}
+          onClose={()=>setPick(null)}
+          onSave={(lu)=>{ onLineup(pick, { ...lu, forDate: lu.confirmed ? fx.date : null }); setPick(null); }} />
+      )}
+
+
     </div>
   );
 }
@@ -2557,41 +2684,41 @@ function LineupPicker({ team, rows, onClose, onSave }) {
   const over = start.length > 11;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background:"#171310" }}>
+    <div className="fixed inset-0 z-50 overflow-y-auto" style={{ margin:0, background:"var(--bg)" }}>
       <div className="max-w-md mx-auto pb-24">
         <div className="sticky top-0 z-10 px-4 py-3 flex items-center gap-2"
-          style={{ background:"#171310", borderBottom:"1px solid #2A2320" }}>
-          <button onClick={onClose} className="text-[13px]" style={{ color:"#8B7C6C" }}>ยกเลิก</button>
-          <p className="flex-1 text-center text-[13.5px] text-stone-100 truncate">จัดตัว {team?.name}</p>
-          <button onClick={()=>onSave({ start, sub:[], confirmed })} className="text-[13px]" style={{ color:"#C8A24A" }}>บันทึก</button>
+          style={{ background:"var(--bg)", borderBottom:"1px solid var(--line)" }}>
+          <button onClick={onClose} className="text-[15px]" style={{ color:"var(--text-2)" }}>ยกเลิก</button>
+          <p className="flex-1 text-center text-[15px] text-stone-100 truncate">จัดตัว {team?.name}</p>
+          <button onClick={()=>onSave({ start, sub:[], confirmed })} className="text-[15px]" style={{ color:"var(--accent)" }}>บันทึก</button>
         </div>
 
         <div className="px-4 pt-3">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[12px]" style={{ color: over?TONE.bad:(start.length===11?TONE.good:"#8B7C6C") }}>
+            <span className="text-[13px]" style={{ color: over?TONE.bad:(start.length===11?TONE.good:"var(--text-2)") }}>
               ตัวจริง {start.length}/11
             </span>
 
-            <button onClick={auto} className="ml-auto px-3 py-1.5 rounded-sm text-[11.5px]"
-              style={{ background:"#2A2320", color:"#C8A24A" }}>จัดอัตโนมัติตามดวง</button>
+            <button onClick={auto} className="ml-auto px-3 py-1.5 rounded-sm text-[13px]"
+              style={{ background:"var(--card-2)", color:"var(--accent)" }}>จัดอัตโนมัติตามดวง</button>
           </div>
           <div className="px-3 pb-2">
             <button onClick={()=>setConfirmed(!confirmed)}
-              className="w-full px-3 rounded-sm text-[12px] text-left flex items-center gap-2"
-              style={{ minHeight:"44px", background: confirmed?"#25402F":"#2A2320",
-                border:"1px solid "+(confirmed?"#3E6B4F":"#362D27"), color: confirmed?"#7FCBA3":"#8B7C6C" }}>
-              <span className="text-[14px]">{confirmed ? "☑" : "☐"}</span>
+              className="w-full px-3 rounded-sm text-[13px] text-left flex items-center gap-2"
+              style={{ minHeight:"44px", background: confirmed?"var(--good-bg)":"var(--card-2)",
+                border:"1px solid "+(confirmed?"var(--good)":"var(--line)"), color: confirmed?"var(--good)":"var(--text-2)" }}>
+              <span className="text-[15px]">{confirmed ? "☑" : "☐"}</span>
               <span className="flex-1">
                 {confirmed ? "ตัวจริงที่ประกาศแล้ว" : "ตัวจริงคาดการณ์ (ยังไม่ประกาศ)"}
-                <span className="block text-[10px] mt-0.5" style={{ color:"#6B5D50" }}>
+                <span className="block text-[12px] mt-0.5" style={{ color:"var(--muted)" }}>
                   ติ๊กเฉพาะตอนได้ใบรายชื่อจริง · แอปจะบันทึกคำทำนายอัตโนมัติให้เมื่อครบทั้งสองทีม
                 </span>
               </span>
             </button>
           </div>
-          {over && <p className="text-[11px] mb-2" style={{ color:TONE.bad }}>เกิน 11 คน แตะชื่อเพื่อเอาออก</p>}
+          {over && <p className="text-[12px] mb-2" style={{ color:TONE.bad }}>เกิน 11 คน แตะชื่อเพื่อเอาออก</p>}
           {team?.lineupAt && (
-            <p className="text-[10.5px] mb-2" style={{ color:"#5A4E44" }}>
+            <p className="text-[12px] mb-2" style={{ color:"var(--muted)" }}>
               เริ่มจากชุดที่บันทึกไว้เมื่อ {new Date(team.lineupAt).toLocaleString("th-TH",{day:"numeric",month:"short",year:"2-digit",hour:"2-digit",minute:"2-digit"})}
             </p>
           )}
@@ -2601,22 +2728,22 @@ function LineupPicker({ team, rows, onClose, onSave }) {
             if (!g.length) return null;
             return (
               <div key={pos} className="mb-3">
-                <p className="text-[11px] mb-1" style={{ color:"#6B5D50" }}>{pos}</p>
+                <p className="text-[12px] mb-1" style={{ color:"var(--muted)" }}>{pos}</p>
                 <div className="space-y-1">
                   {g.map(x=>{
                     const st = stateOf(x.p.id);
-                    const bg = st==="start" ? "#25402F" : "#1A1512";
-                    const fg = st==="start" ? "#7FCBA3" : "#5A4E44";
+                    const bg = st==="start" ? "var(--good-bg)" : "var(--sunk)";
+                    const fg = st==="start" ? "var(--good)" : "var(--muted)";
                     return (
                       <button key={x.p.id} onClick={()=>cycle(x.p.id)}
                         className="w-full flex items-center gap-2 px-2.5 py-2 rounded-sm text-left"
-                        style={{ background:bg, border:"1px solid #302823" }}>
-                        <span className="text-[10px] w-[38px] shrink-0" style={{ color:fg }}>
+                        style={{ background:bg, border:"1px solid var(--line)" }}>
+                        <span className="text-[12px] w-[38px] shrink-0" style={{ color:fg }}>
                           {st==="start"?"✓":"—"}
                         </span>
-                        <span className="flex-1 min-w-0 text-[12.5px] text-stone-200 truncate">{x.p.n||x.p.th}</span>
-                        <span className="text-[10.5px] shrink-0" style={{ color:REL_HEX[x.s.relY.key] }}>{x.s.relY.label}</span>
-                        <span className="text-[11px] w-9 text-right shrink-0"
+                        <span className="flex-1 min-w-0 text-[13px] text-stone-200 truncate">{x.p.n||x.p.th}</span>
+                        <span className="text-[12px] shrink-0" style={{ color:REL_HEX[x.s.relY.key] }}>{x.s.relY.label}</span>
+                        <span className="text-[12px] w-9 text-right shrink-0"
                           style={{ color: x.s.raw>=1?TONE.good : x.s.raw<=-1?TONE.bad : TONE.mid }}>
                           {x.s.raw>0?"+":""}{x.s.raw.toFixed(1)}
                         </span>
@@ -2627,7 +2754,7 @@ function LineupPicker({ team, rows, onClose, onSave }) {
               </div>
             );
           })}
-          <p className="text-[10.5px] leading-relaxed pb-4" style={{ color:"#6B5D50" }}>
+          <p className="text-[12px] leading-relaxed pb-4" style={{ color:"var(--muted)" }}>
             แตะชื่อเพื่อสลับ ไม่ลง ↔ ตัวจริง
           </p>
         </div>
@@ -2988,7 +3115,7 @@ const DOW_TH = ["อาทิตย์","จันทร์","อังคาร
 const SIGN_TH = ["เมษ","พฤษภ","เมถุน","กรกฎ","สิงห์","กันย์","ตุลย์","พิจิก","ธนู","มังกร","กุมภ์","มีน"
 ];
 
-function SchoolPanel({ A, B, day, local, gap, cA, cB }) {
+function SchoolPanel({ A, B, day, local, gap, cA, cB, bare }) {
   const [open, setOpen] = useState(null);
   const list = schoolResults(A, B, day, local, gap);
 
@@ -3015,40 +3142,40 @@ function SchoolPanel({ A, B, day, local, gap, cA, cB }) {
   const clash = forA.length > 0 && forB.length > 0;   /* ขัดกันจริง ไม่ใช่แค่เสมอ */
 
   return (
-    <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-      <p className="px-3 py-2 text-[11px]" style={{ background:"#2A2320", color:"#C8A24A" }}>สรุปตามศาสตร์</p>
+    <div className={bare ? "" : "rounded-xl overflow-hidden"} style={bare ? {} : { background:"var(--card)", border:"1px solid var(--line)" }}>
+      {!bare && <p className="px-4 pt-3 pb-1.5 text-[15px] font-medium" style={{ color:"var(--text-strong)" }}>สรุปตามศาสตร์</p>}
 
       {/* ── แถบรวมทุกศาสตร์ ── */}
-      <div className="px-3 py-2.5" style={{ background:"#1E1915", borderTop:"1px solid #2A2320" }}>
+      <div className="px-3 py-2.5" style={{ background:"var(--card)", borderTop:"1px solid var(--line)" }}>
         <div className="flex items-baseline gap-2">
-          <span className="text-[12.5px] flex-1" style={{ color:"#E9E1D0" }}>รวมทุกศาสตร์</span>
-          <span className="text-[9.5px] px-1.5 rounded" style={{ background:"#2A2320", color:"#8B7C6C" }}>
+          <span className="text-[13px] flex-1" style={{ color:"var(--text-strong)" }}>รวมทุกศาสตร์</span>
+          <span className="text-[12px] px-1.5 rounded" style={{ background:"var(--card-2)", color:"var(--text-2)" }}>
             {vote.length} ศาสตร์ · ถ่วงน้ำหนักเท่ากัน
           </span>
         </div>
         <div className="flex items-center gap-2 mt-1.5">
-          <span className="w-12 text-right text-[14px] shrink-0" style={{ color:cA }}>{(mA*100).toFixed(0)}%</span>
-          <div className="flex-1 relative h-2.5 rounded-sm" style={{ background:"#0E0B09" }}>
-            <div className="absolute inset-y-0 left-1/2 w-px z-10" style={{ background:"#4A3F38" }} />
+          <span className="w-12 text-right text-[15px] shrink-0" style={{ color:cA }}>{(mA*100).toFixed(0)}%</span>
+          <div className="flex-1 relative h-2.5 rounded-sm" style={{ background:"var(--sunk)" }}>
+            <div className="absolute inset-y-0 left-1/2 w-px z-10" style={{ background:"var(--line-2)" }} />
             <div className="absolute inset-y-0 rounded-sm"
               style={{ background: mLean>=0?cA:cB,
                 left: mLean>=0?`${50-mLean*50}%`:"50%", width:`${Math.abs(mLean)*50}%` }} />
           </div>
-          <span className="w-12 text-[14px] shrink-0" style={{ color:cB }}>{(mB*100).toFixed(0)}%</span>
+          <span className="w-12 text-[15px] shrink-0" style={{ color:cB }}>{(mB*100).toFixed(0)}%</span>
         </div>
-        <p className="text-[11.5px] mt-1.5 leading-relaxed" style={{ color:"#E9E1D0" }}>
+        <p className="text-[13px] mt-1.5 leading-relaxed" style={{ color:"var(--text-strong)" }}>
           {lead ? `รวมแล้วเข้าทาง ${lead.team.name} · ห่าง ${Math.abs(dLead*100).toFixed(0)} จุด`
                 : "รวมแล้วพอกัน ไม่มีฝ่ายไหนได้เปรียบ"}
         </p>
-        <p className="text-[10.5px] mt-0.5 leading-relaxed"
-          style={{ color: unan ? "#C8A24A" : clash ? "#D8A94A" : "#8B7C6C" }}>
+        <p className="text-[12px] mt-0.5 leading-relaxed"
+          style={{ color: unan ? "var(--accent)" : clash ? "var(--warn)" : "var(--text-2)" }}>
           {unan  ? `ทั้ง ${vote.length} ศาสตร์ชี้ทางเดียวกัน สัญญาณหนักแน่น`
           : clash ? `ศาสตร์ขัดกันเอง — เข้าทาง ${A.team.name} ${forA.length} · เข้าทาง ${B.team.name} ${forB.length}`
                     + (evenN ? ` · เสมอ ${evenN}` : "") + ` · สัญญาณอ่อน เชื่อไม่ได้มาก`
           : evenN === vote.length ? `ทุกศาสตร์ให้สองทีมพอกัน ไม่มีสัญญาณ`
           : `มี ${vote.length - evenN} ศาสตร์ที่เห็นต่าง อีก ${evenN} ศาสตร์พอกัน ไม่มีศาสตร์ไหนค้าน`}
         </p>
-        <p className="text-[10px] mt-1 leading-relaxed" style={{ color:"#6B5D50" }}>
+        <p className="text-[12px] mt-1 leading-relaxed" style={{ color:"var(--muted)" }}>
           {forA.length>0 && <>เข้าทาง {A.team.name}: {forA.map(x=>x.sc.name.split(" ")[0]).join(", ")}<br/></>}
           {forB.length>0 && <>เข้าทาง {B.team.name}: {forB.map(x=>x.sc.name.split(" ")[0]).join(", ")}<br/></>}
           {shared.map(x=>`${x.sc.name.split(" ")[0]} ให้คะแนนวัน ${x.sc.a>0?"+":""}${x.sc.a} ใช้ร่วมกัน ไม่เข้าข้างใคร`).join(" · ")}
@@ -3060,52 +3187,52 @@ function SchoolPanel({ A, B, day, local, gap, cA, cB }) {
         const lean = Math.max(-1, Math.min(1, (ia - ib) * 1.6));
         const isOpen = open === sc.id;
         return (
-          <div key={sc.id} style={{ borderTop:"1px solid #2A2320" }}>
+          <div key={sc.id} style={{ borderTop:"1px solid var(--line)" }}>
             <button onClick={()=>setOpen(isOpen?null:sc.id)} className="w-full px-3 py-2.5 text-left">
               <div className="flex items-baseline gap-2">
-                <span className="text-[12.5px] flex-1" style={{ color:"#E9E1D0" }}>{sc.name}</span>
-                <span className="text-[9.5px] px-1.5 rounded" style={{ background:"#2A2320", color:"#8B7C6C" }}>{sc.src}</span>
-                <span className="text-[11px]" style={{ color:"#6B5D50" }}>{isOpen?"▲":"▼"}</span>
+                <span className="text-[13px] flex-1" style={{ color:"var(--text-strong)" }}>{sc.name}</span>
+                <span className="text-[12px] px-1.5 rounded" style={{ background:"var(--card-2)", color:"var(--text-2)" }}>{sc.src}</span>
+                <span className="text-[12px]" style={{ color:"var(--muted)" }}>{isOpen?"▲":"▼"}</span>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="w-12 text-right text-[12px] shrink-0" style={{ color:cA }}>{sc.a>0?"+":""}{sc.a.toFixed(2)}</span>
-                <div className="flex-1 relative h-2 rounded-sm" style={{ background:"#0E0B09" }}>
-                  <div className="absolute inset-y-0 left-1/2 w-px z-10" style={{ background:"#4A3F38" }} />
+                <span className="w-12 text-right text-[13px] shrink-0" style={{ color:cA }}>{sc.a>0?"+":""}{sc.a.toFixed(2)}</span>
+                <div className="flex-1 relative h-2 rounded-sm" style={{ background:"var(--sunk)" }}>
+                  <div className="absolute inset-y-0 left-1/2 w-px z-10" style={{ background:"var(--line-2)" }} />
                   {!sc.shared && (
                     <div className="absolute inset-y-0 rounded-sm"
                       style={{ background: lean>=0?cA:cB,
                         left: lean>=0?`${50-lean*50}%`:"50%", width:`${Math.abs(lean)*50}%` }} />
                   )}
                 </div>
-                <span className="w-12 text-[12px] shrink-0" style={{ color:cB }}>{sc.b>0?"+":""}{sc.b.toFixed(2)}</span>
+                <span className="w-12 text-[13px] shrink-0" style={{ color:cB }}>{sc.b>0?"+":""}{sc.b.toFixed(2)}</span>
               </div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="w-12 text-right text-[9.5px] shrink-0" style={{ color:"#5A4E44" }}>{(ia*100).toFixed(0)}%</span>
-                <span className="flex-1 text-[10px] text-center" style={{ color:"#5A4E44" }}>
+                <span className="w-12 text-right text-[12px] shrink-0" style={{ color:"var(--muted)" }}>{(ia*100).toFixed(0)}%</span>
+                <span className="flex-1 text-[12px] text-center" style={{ color:"var(--muted)" }}>
                   ช่วงของศาสตร์นี้ {sc.lo} ถึง +{sc.hi}
                 </span>
-                <span className="w-12 text-[9.5px] shrink-0" style={{ color:"#5A4E44" }}>{(ib*100).toFixed(0)}%</span>
+                <span className="w-12 text-[12px] shrink-0" style={{ color:"var(--muted)" }}>{(ib*100).toFixed(0)}%</span>
               </div>
-              <p className="text-[10.5px] mt-1 leading-relaxed" style={{ color:"#6B5D50" }}>
+              <p className="text-[12px] mt-1 leading-relaxed" style={{ color:"var(--muted)" }}>
                 {sc.shared ? "ศาสตร์นี้ให้คะแนนวัน ไม่แยกทีม · " : ""}{sc.note}
               </p>
             </button>
 
             {isOpen && (
-              <div className="px-3 pb-3" style={{ background:"#1A1512" }}>
+              <div className="px-3 pb-3" style={{ background:"var(--sunk)" }}>
                 {sc.detail.map((grp,gi)=>(
                   <div key={gi} className="pt-2">
-                    <p className="text-[11px] mb-1" style={{ color: sc.shared?"#8B7C6C":(gi===0?cA:cB) }}>{grp.team}</p>
+                    <p className="text-[12px] mb-1" style={{ color: sc.shared?"var(--text-2)":(gi===0?cA:cB) }}>{grp.team}</p>
                     {grp.rows.length ? grp.rows.map((r,ri)=>(
                       <div key={ri} className="flex items-baseline gap-2 py-0.5">
-                        <span className="text-[11.5px] shrink-0 w-[92px] truncate" style={{ color:"#C9BCAB" }}>{r.n}</span>
-                        <span className="text-[10.5px] flex-1 leading-snug" style={{ color:"#8B7C6C" }}>{r.t}</span>
-                        <span className="text-[11px] shrink-0 w-9 text-right"
+                        <span className="text-[13px] shrink-0 w-[92px] truncate" style={{ color:"var(--text)" }}>{r.n}</span>
+                        <span className="text-[12px] flex-1 leading-snug" style={{ color:"var(--text-2)" }}>{r.t}</span>
+                        <span className="text-[12px] shrink-0 w-9 text-right"
                           style={{ color: r.w>0?TONE.good : r.w<0?TONE.bad : TONE.mid }}>
                           {r.w>0?"+":""}{r.w}
                         </span>
                       </div>
-                    )) : <p className="text-[11px]" style={{ color:"#5A4E44" }}>ไม่มีรายการที่เข้าเกณฑ์</p>}
+                    )) : <p className="text-[12px]" style={{ color:"var(--muted)" }}>ไม่มีรายการที่เข้าเกณฑ์</p>}
                   </div>
                 ))}
               </div>
@@ -3113,8 +3240,8 @@ function SchoolPanel({ A, B, day, local, gap, cA, cB }) {
           </div>
         );
       })}
-      <p className="px-3 py-2.5 text-[10.5px] leading-relaxed"
-        style={{ borderTop:"1px solid #2A2320", background:"#1A1512", color:"#6B5D50" }}>
+      <p className="px-3 py-2.5 text-[12px] leading-relaxed"
+        style={{ borderTop:"1px solid var(--line)", background:"var(--sunk)", color:"var(--muted)" }}>
         แต่ละศาสตร์มีช่วงคะแนนไม่เท่ากัน ตัวเลขดิบจึงเทียบข้ามศาสตร์ไม่ได้ ให้ดูเปอร์เซ็นต์ที่ปรับสเกลแล้วแทน
         และทั้งสามศาสตร์ถามคนละคำถาม — โป๊ยยี่ถามว่าดวงคนกับดวงวันเข้ากันไหม ทักษาถามว่าสีเสื้อถูกโฉลกกับวันเกิดไหม
         ส่วนสากลถามว่าดาวจรทำมุมกับดวงอาทิตย์กำเนิดอย่างไร คนเดียวกันจึงได้คนละผลเป็นเรื่องปกติ
@@ -3129,7 +3256,7 @@ function SchoolPanel({ A, B, day, local, gap, cA, cB }) {
 /* ═══════════ 7 อัตราต่อรอง ═══════════
    แสดงราคาตลาดคู่กับความน่าจะเป็นของเรา เพื่อให้เห็นว่าเราต่างจากตลาดตรงไหน
    แต่ละตลาดบอกที่มาไว้ชัดว่าเป็นราคาจริง ราคาที่ถอดออกมา หรือของเราล้วน */
-function OddsPanel({ A, B, fx, local, gap, results, cA, cB }) {
+function OddsPanel({ A, B, fx, local, gap, results, cA, cB, bare }) {
   const hName = A?.team?.name, aName = B?.team?.name;
   const key = hName ? ((local && local.date) || fx.date) + "|" + hName : null;
   const raw = key ? ODDS_BY.get(key) : null;
@@ -3157,16 +3284,16 @@ function OddsPanel({ A, B, fx, local, gap, results, cA, cB }) {
     const real = kind === "real" && odds;
     const shown = real ? Number(odds).toFixed(2) : "≈" + toOdds(mkt != null ? mkt : ours);
     return (
-      <div className="flex items-baseline gap-2 px-3 py-1.5" style={{ borderTop:"1px solid #2A2320" }}>
-        <span className="text-[11.5px] flex-1 min-w-0" style={{ color:"#C9BCAB" }}>
-          {label}{note && <span className="text-[10px] ml-1" style={{ color:"#5A4E44" }}>{note}</span>}
+      <div className="flex items-baseline gap-2 px-3 py-1.5" style={{ borderTop:"1px solid var(--line)" }}>
+        <span className="text-[13px] flex-1 min-w-0" style={{ color:"var(--text)" }}>
+          {label}{note && <span className="text-[12px] ml-1" style={{ color:"var(--muted)" }}>{note}</span>}
         </span>
-        <span className="text-[11px] w-12 text-right"
-          style={{ color: real ? "#C9BCAB" : "#5A4E44" }}>{shown}</span>
-        <span className="text-[11.5px] w-12 text-right" style={{ color:"#C8A24A" }}>{pc(mkt)}</span>
-        <span className="text-[11.5px] w-12 text-right" style={{ color:"#9FB9A8" }}>{pc(ours)}</span>
-        <span className="text-[10.5px] w-12 text-right"
-          style={{ color: d == null ? "#5A4E44" : Math.abs(d) < 2 ? "#5A4E44" : d > 0 ? TONE.good : TONE.bad }}>
+        <span className="text-[12px] w-12 text-right"
+          style={{ color: real ? "var(--text)" : "var(--muted)" }}>{shown}</span>
+        <span className="text-[13px] w-12 text-right" style={{ color:"var(--accent)" }}>{pc(mkt)}</span>
+        <span className="text-[13px] w-12 text-right" style={{ color:"var(--good)" }}>{pc(ours)}</span>
+        <span className="text-[12px] w-12 text-right"
+          style={{ color: d == null ? "var(--muted)" : Math.abs(d) < 2 ? "var(--muted)" : d > 0 ? TONE.good : TONE.bad }}>
           {d == null ? "" : (d >= 0 ? "+" : "") + d.toFixed(1)}
         </span>
       </div>
@@ -3174,15 +3301,15 @@ function OddsPanel({ A, B, fx, local, gap, results, cA, cB }) {
   };
   /* หัวข้อใหญ่ 4 หัวข้อ */
   const Sec = ({ n, t, sub }) => (
-    <div className="px-3 pt-3 pb-1.5" style={{ borderTop:"1px solid #3A302A", background:"#1E1915" }}>
-      <p className="text-[11.5px]">
-        <span style={{ color:"#8B7C6C" }}>{n}. </span><span style={{ color:"#C8A24A" }}>{t}</span>
+    <div className="px-3 pt-3 pb-1.5" style={{ borderTop:"1px solid var(--line)", background:"var(--card)" }}>
+      <p className="text-[13px]">
+        <span style={{ color:"var(--text-2)" }}>{n}. </span><span style={{ color:"var(--accent)" }}>{t}</span>
       </p>
-      {sub && <p className="text-[10px] mt-1 leading-relaxed" style={{ color:"#6B5D50" }}>{sub}</p>}
+      {sub && <p className="text-[12px] mt-1 leading-relaxed" style={{ color:"var(--muted)" }}>{sub}</p>}
     </div>
   );
   const Grp = ({ t }) => (
-    <p className="px-3 pt-2.5 pb-0.5 text-[10.5px]" style={{ color:"#8B7C6C" }}>{t}</p>
+    <p className="px-3 pt-2.5 pb-0.5 text-[12px]" style={{ color:"var(--text-2)" }}>{t}</p>
   );
 
   if (!mg && !sf) return null;
@@ -3205,23 +3332,21 @@ function OddsPanel({ A, B, fx, local, gap, results, cA, cB }) {
   };
 
   return (
-    <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-      <p className="px-3 py-2 text-[11px]" style={{ background:"#2A2320", color:"#C8A24A" }}>
-        7 · อัตราต่อรอง
-      </p>
+    <div className={bare ? "" : "rounded-xl overflow-hidden"} style={bare ? {} : { background:"var(--card)", border:"1px solid var(--line)" }}>
+      {!bare && <p className="px-4 pt-3 pb-1.5 text-[15px] font-medium" style={{ color:"var(--text-strong)" }}>อัตราต่อรอง</p>}
       {!mg && (
-        <p className="px-3 py-2 text-[11px]" style={{ color:"#6B5D50" }}>
+        <p className="px-3 py-2 text-[12px]" style={{ color:"var(--muted)" }}>
           ยังไม่มีราคาตลาดของนัดนี้ — ราคามาจาก football-data.co.uk ซึ่งลงหลังจบนัด ส่วนนัดที่ยังไม่เตะต้องดึงจากไฟล์ fixtures
         </p>
       )}
-      <div className="flex items-baseline gap-2 px-3 py-1.5" style={{ background:"#1A1512" }}>
-        <span className="text-[10px] flex-1" style={{ color:"#6B5D50" }}>ตลาด</span>
-        <span className="text-[10px] w-12 text-right" style={{ color:"#6B5D50" }}>ราคา</span>
-        <span className="text-[10px] w-12 text-right" style={{ color:"#6B5D50" }}>ตลาด%</span>
-        <span className="text-[10px] w-12 text-right" style={{ color:"#6B5D50" }}>เรา%</span>
-        <span className="text-[10px] w-12 text-right" style={{ color:"#6B5D50" }}>ต่าง</span>
+      <div className="flex items-baseline gap-2 px-3 py-1.5" style={{ background:"var(--sunk)" }}>
+        <span className="text-[12px] flex-1" style={{ color:"var(--muted)" }}>ตลาด</span>
+        <span className="text-[12px] w-12 text-right" style={{ color:"var(--muted)" }}>ราคา</span>
+        <span className="text-[12px] w-12 text-right" style={{ color:"var(--muted)" }}>ตลาด%</span>
+        <span className="text-[12px] w-12 text-right" style={{ color:"var(--muted)" }}>เรา%</span>
+        <span className="text-[12px] w-12 text-right" style={{ color:"var(--muted)" }}>ต่าง</span>
       </div>
-      <p className="px-3 pb-2 text-[10px] leading-relaxed" style={{ background:"#1A1512", color:"#5A4E44" }}>
+      <p className="px-3 pb-2 text-[12px] leading-relaxed" style={{ background:"var(--sunk)", color:"var(--muted)" }}>
         ราคาสีขาวคือราคาที่เจ้ามือเปิดจริง · ราคาที่มี ≈ และสีจางคือราคายุติธรรมที่เราคำนวณเอง ไม่ใช่ราคาของเจ้ามือ
       </p>
 
@@ -3241,7 +3366,7 @@ function OddsPanel({ A, B, fx, local, gap, results, cA, cB }) {
             mkt={ahProb(mg,line)!=null?1-ahProb(mg,line):null}
             ours={ahProb(tg,line)!=null?1-ahProb(tg,line):null} kind="real" />
         </>) : (
-          <p className="px-3 py-2 text-[10.5px]" style={{ color:"#6B5D50" }}>
+          <p className="px-3 py-2 text-[12px]" style={{ color:"var(--muted)" }}>
             นัดนี้ไม่มีเส้นต่อรองลูกในแหล่งข้อมูล
           </p>
         )}
@@ -3285,7 +3410,7 @@ function OddsPanel({ A, B, fx, local, gap, results, cA, cB }) {
         <Row label="เตะมุมรวม สูงกว่า 9.5" mkt={null} ours={overProb(sf.cornerTot,9.5)} kind="ours" />
         <Row label="เตะมุมรวม สูงกว่า 10.5" mkt={null} ours={overProb(sf.cornerTot,10.5)} kind="ours" />
         <Row label="เตะมุมรวม สูงกว่า 11.5" mkt={null} ours={overProb(sf.cornerTot,11.5)} kind="ours" />
-        <p className="px-3 py-2 text-[10.5px] leading-relaxed" style={{ color:"#6B5D50" }}>
+        <p className="px-3 py-2 text-[12px] leading-relaxed" style={{ color:"var(--muted)" }}>
           คาดเตะมุม {hName} {sf.cornerH.toFixed(1)} · {aName} {sf.cornerA.toFixed(1)} · รวม {sf.cornerTot.toFixed(1)} ลูก
         </p>
 
@@ -3297,15 +3422,15 @@ function OddsPanel({ A, B, fx, local, gap, results, cA, cB }) {
         <Row label="ใบรวมทั้งนัด สูงกว่า 3.5" mkt={null} ours={overProb(sf.cardTot,3.5)} kind="ours" />
         <Row label="ใบรวมทั้งนัด สูงกว่า 4.5" mkt={null} ours={overProb(sf.cardTot,4.5)} kind="ours" />
         <Row label="ใบรวมทั้งนัด สูงกว่า 5.5" mkt={null} ours={overProb(sf.cardTot,5.5)} kind="ours" />
-        <p className="px-3 py-2 text-[10.5px] leading-relaxed" style={{ color:"#6B5D50" }}>
+        <p className="px-3 py-2 text-[12px] leading-relaxed" style={{ color:"var(--muted)" }}>
           คาดใบ {hName} {sf.cardH.toFixed(1)} · {aName} {sf.cardA.toFixed(1)} · รวม {sf.cardTot.toFixed(1)} ใบ
           {!sf.teamCards && " · ทีมใดทีมหนึ่งยังไม่มีสถิติพอ ใช้ค่าเฉลี่ยลีกแทน"}
         </p>
       </>)}
 
       {ourPo && mg && (
-        <p className="px-3 py-2 text-[10.5px] leading-relaxed"
-          style={{ borderTop:"1px solid #2A2320", background:"#1A1512", color:"#6B5D50" }}>
+        <p className="px-3 py-2 text-[12px] leading-relaxed"
+          style={{ borderTop:"1px solid var(--line)", background:"var(--sunk)", color:"var(--muted)" }}>
           เทียบกันตรง ๆ: ปัวซงของเราเองให้ประตูคาด {ourPo.lh.toFixed(2)} – {ourPo.la.toFixed(2)} ส่วนตลาดให้ {mg.lh.toFixed(2)} – {mg.la.toFixed(2)} ·
           ทดสอบเดินหน้า 63 นัดแล้วตลาดแม่นกว่าโมเดลเราชัดเจน คอลัมน์ "เรา%" จึงอิงตลาดเป็นฐาน ไม่ได้ใช้ปัวซงของเราเอง ·
           ตัวเลขทั้งหมดเป็นการวิเคราะห์ ไม่ใช่คำแนะนำการพนัน
@@ -3316,14 +3441,54 @@ function OddsPanel({ A, B, fx, local, gap, results, cA, cB }) {
 }
 
 const Step = ({ n, title, children }) => (
-  <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-    <div className="flex items-center gap-2 px-3 py-2" style={{ background:"#2A2320" }}>
-      <span className="w-5 h-5 rounded-full text-[11px] flex items-center justify-center shrink-0"
-        style={{ background:"#3A302A", color:"#C8A24A" }}>{n}</span>
-      <span className="text-[12px]" style={{ color:"#C8A24A" }}>{title}</span>
-    </div>
-    <div className="px-3 py-2">{children}</div>
-  </div>
+  <section className="rounded-xl overflow-hidden" style={{ background:"var(--card)", border:"1px solid var(--line)", boxShadow:"var(--shadow)" }}>
+    <h2 className="px-4 pt-3 pb-1 text-[15px] font-medium" style={{ color:"var(--text-strong)" }}>{title}</h2>
+    <div className="px-4 pb-3">{children}</div>
+  </section>
+);
+
+/* ── ชิ้นส่วนหน้าตาแบบเรียบ ใช้ทั้งแอป ── */
+const Card = ({ title, note, children, pad = true }) => (
+  <section className="rounded-xl overflow-hidden" style={{ background:"var(--card)", border:"1px solid var(--line)", boxShadow:"var(--shadow)" }}>
+    {title && (
+      <div className="px-4 pt-3.5 pb-2 flex items-baseline gap-2">
+        <h2 className="text-[15px] font-medium flex-1" style={{ color:"var(--text-strong)" }}>{title}</h2>
+        {note && <span className="text-[12px] text-right" style={{ color:"var(--muted)" }}>{note}</span>}
+      </div>
+    )}
+    <div className={pad ? "px-4 pb-3.5" : ""}>{children}</div>
+  </section>
+);
+
+/* ส่วนพับเก็บ — เนื้อหาอยู่ใน DOM ตลอด (hooks ข้างในไม่เปลี่ยนลำดับ) แค่ซ่อนไว้ */
+const Fold = ({ title, meta, children, open = false }) => (
+  <details open={open} className="rounded-xl overflow-hidden" style={{ background:"var(--card)", border:"1px solid var(--line)" }}>
+    <summary className="flex items-center gap-2 px-4 py-3.5 select-none">
+      <span className="text-[15px] flex-1" style={{ color:"var(--text-strong)" }}>{title}</span>
+      {meta && <span className="text-[12px] truncate max-w-[45%]" style={{ color:"var(--muted)" }}>{meta}</span>}
+      <span className="chev text-[17px] leading-none" style={{ color:"var(--muted)" }}>›</span>
+    </summary>
+    <div style={{ borderTop:"1px solid var(--line)" }}>{children}</div>
+  </details>
+);
+
+/* ตัวย่อทีม 3 ตัวอักษร ใช้หัวตารางที่แคบ */
+const TEAM_CODE = { "Arsenal":"ARS","Aston Villa":"AVL","Bournemouth":"BOU","Brentford":"BRE","Brighton":"BHA",
+  "Chelsea":"CHE","Coventry City":"COV","Crystal Palace":"CRY","Everton":"EVE","Fulham":"FUL","Hull City":"HUL",
+  "Ipswich Town":"IPS","Leeds United":"LEE","Liverpool":"LIV","Manchester City":"MCI","Manchester United":"MUN",
+  "Newcastle United":"NEW","Nottingham Forest":"NFO","Sunderland":"SUN","Tottenham Hotspur":"TOT" };
+const teamCode = (n) => TEAM_CODE[n] || (n || "").replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase();
+const pct = (v) => v == null ? "—" : Math.round(v * 100) + "%";
+const sgn = (v, d = 2) => (v > 0 ? "+" : "") + v.toFixed(d);
+
+/* ตารางเรียบ: แถวหัวสีจาง ตัวเลขชิดขวาแบบตัวเลขเท่ากัน */
+const TH = ({ children, right, w }) => (
+  <th className={"py-1.5 text-[12px] font-normal " + (right ? "text-right" : "text-left")}
+    style={{ color:"var(--muted)", width:w }}>{children}</th>
+);
+const TD = ({ children, right, color, strong }) => (
+  <td className={"py-2 text-[13px] tabnum " + (right ? "text-right" : "text-left")}
+    style={{ color: color || (strong ? "var(--text-strong)" : "var(--text)"), borderTop:"1px solid var(--line)" }}>{children}</td>
 );
 
 function LineupRow({ A, B, cA, cB, onPick }) {
@@ -3331,19 +3496,19 @@ function LineupRow({ A, B, cA, cB, onPick }) {
   return (
     <div>
       {(A.team.lineupAt || B.team.lineupAt) && (
-        <p className="text-[10px] pb-1.5" style={{ color:"#5A4E44" }}>
+        <p className="text-[12px] pb-1.5" style={{ color:"var(--muted)" }}>
           บันทึกไว้ล่าสุด {[A,B].filter(S=>S.team.lineupAt)
             .map(S=>`${S.team.name} ${new Date(S.team.lineupAt).toLocaleDateString("th-TH",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`)
             .join(" · ")} — ใช้ต่อได้เลย หรือกดปุ่มเพื่อแก้
         </p>
       )}
       <div className="flex items-center gap-2 pb-2">
-        <button onClick={()=>onPick(A.team.slug)} className="flex-1 py-1.5 rounded-sm text-[11.5px] truncate"
-          style={{ background:"#2A2320", color:cA, borderLeft:`3px solid ${cA}` }}>
+        <button onClick={()=>onPick(A.team.slug)} className="flex-1 py-1.5 rounded-sm text-[13px] truncate"
+          style={{ background:"var(--card-2)", color:cA, borderLeft:`3px solid ${cA}` }}>
           {A.team.name} · {la.length}/11
         </button>
-        <button onClick={()=>onPick(B.team.slug)} className="flex-1 py-1.5 rounded-sm text-[11.5px] truncate"
-          style={{ background:"#2A2320", color:cB, borderRight:`3px solid ${cB}` }}>
+        <button onClick={()=>onPick(B.team.slug)} className="flex-1 py-1.5 rounded-sm text-[13px] truncate"
+          style={{ background:"var(--card-2)", color:cB, borderRight:`3px solid ${cB}` }}>
           {B.team.name} · {lb.length}/11
         </button>
       </div>
@@ -3355,13 +3520,13 @@ function LineupRow({ A, B, cA, cB, onPick }) {
           if (!n) return null;
           return (
             <div key={pos}>
-              <div className="flex items-center gap-2 py-1" style={{ background:"#1A1512" }}>
-                <span className="flex-1 text-[10px] text-right pr-1" style={{ color:"#6B5D50" }}>{ga.length}</span>
-                <span className="w-[54px] text-center text-[11px]" style={{ color:"#8B7C6C" }}>{pos}</span>
-                <span className="flex-1 text-[10px] pl-1" style={{ color:"#6B5D50" }}>{gb.length}</span>
+              <div className="flex items-center gap-2 py-1" style={{ background:"var(--sunk)" }}>
+                <span className="flex-1 text-[12px] text-right pr-1" style={{ color:"var(--muted)" }}>{ga.length}</span>
+                <span className="w-[54px] text-center text-[12px]" style={{ color:"var(--text-2)" }}>{pos}</span>
+                <span className="flex-1 text-[12px] pl-1" style={{ color:"var(--muted)" }}>{gb.length}</span>
               </div>
               {Array.from({length:n}).map((_,i)=>(
-                <div key={i} className="flex items-start gap-2 py-1" style={{ borderTop:"1px solid #241E1A" }}>
+                <div key={i} className="flex items-start gap-2 py-1" style={{ borderTop:"1px solid var(--line)" }}>
                   <div className="flex-1 min-w-0 text-right">{ga[i] && <Cell x={ga[i]} align="right" />}</div>
                   <span className="w-[54px] shrink-0" />
                   <div className="flex-1 min-w-0">{gb[i] && <Cell x={gb[i]} align="left" />}</div>
@@ -3371,7 +3536,7 @@ function LineupRow({ A, B, cA, cB, onPick }) {
           );
         })
       ) : (
-        <p className="text-[11.5px] py-2" style={{ color:"#6B5D50" }}>
+        <p className="text-[13px] py-2" style={{ color:"var(--muted)" }}>
           ยังไม่ได้เลือก กดปุ่มด้านบนเพื่อจัดตัว
         </p>
       )}
@@ -3382,9 +3547,9 @@ function LineupRow({ A, B, cA, cB, onPick }) {
 
 const F = ({ label, ...rest }) => (
   <div>
-    <label className="text-[11px] text-stone-500 block mb-1">{label}</label>
-    <input {...rest} className="w-full px-2.5 py-2 rounded-sm text-[13px] text-stone-100 outline-none"
-      style={{ background:"#171310", border:"1px solid #362D27" }} />
+    <label className="text-[12px] text-stone-500 block mb-1">{label}</label>
+    <input {...rest} className="w-full px-2.5 py-2 rounded-sm text-[15px] text-stone-100 outline-none"
+      style={{ background:"var(--bg)", border:"1px solid var(--line)" }} />
   </div>
 );
 
@@ -7272,11 +7437,11 @@ function OmenElo({ A, B, gap, teams, results, rate, onRate, cA, cB, onSave, save
   const mixed = eloForecast({ ...elo.rating, [A.team.name]: ra + shift }, A.team.name, B.team.name);
 
   const Bar = ({ f, dim }) => (
-    <div className="flex h-5 rounded-sm overflow-hidden text-[9.5px]"
-      style={{ background:"#0E0B09", opacity: dim?0.55:1 }}>
-      {[[f.home,cA],[f.draw,"#5A4E44"],[f.away,cB]].map(([v,c],i)=>(
+    <div className="flex h-5 rounded-sm overflow-hidden text-[12px]"
+      style={{ background:"var(--sunk)", opacity: dim?0.55:1 }}>
+      {[[f.home,cA],[f.draw,"var(--muted)"],[f.away,cB]].map(([v,c],i)=>(
         <div key={i} className="flex items-center justify-center"
-          style={{ width:`${v*100}%`, background:c, color:"#141110" }}>
+          style={{ width:`${v*100}%`, background:c, color:"var(--card)" }}>
           {v>0.13 ? `${Math.round(v*100)}%` : ""}
         </div>
       ))}
@@ -7284,35 +7449,35 @@ function OmenElo({ A, B, gap, teams, results, rate, onRate, cA, cB, onSave, save
   );
 
   return (
-    <div style={{ borderTop:"1px solid #2A2320" }}>
-      <p className="px-3 pt-2 pb-1 text-[10.5px]" style={{ color:"#6B5D50" }}>
+    <div style={{ borderTop:"1px solid var(--line)" }}>
+      <p className="px-3 pt-2 pb-1 text-[12px]" style={{ color:"var(--muted)" }}>
         สถิติเทียบฤกษ์ · Elo {Math.round(ra)} – {Math.round(rb)}
         {results.length ? ` (จาก ${results.length} นัด)` : " (จากความเก่งที่ตั้งไว้)"}
       </p>
       <div className="px-3 pb-2 space-y-1.5">
         <div>
-          <p className="text-[10px] mb-1" style={{ color:"#5A4E44" }}>สถิติล้วน</p>
+          <p className="text-[12px] mb-1" style={{ color:"var(--muted)" }}>สถิติล้วน</p>
           <Bar f={pure} dim />
         </div>
         <div>
-          <p className="text-[10px] mb-1" style={{ color:"#5A4E44" }}>
+          <p className="text-[12px] mb-1" style={{ color:"var(--muted)" }}>
             รวมฤกษ์ ({gap>0?"+":""}{gap.toFixed(2)} → {shift>0?"+":""}{Math.round(shift)} Elo ให้ {gap>=0?A.team.name:B.team.name})
           </p>
           <Bar f={mixed} />
         </div>
         <div className="flex items-center gap-2 pt-1">
-          <span className="text-[10.5px] shrink-0" style={{ color:"#6B5D50" }}>ฤกษ์ 1 แต้ม =</span>
+          <span className="text-[12px] shrink-0" style={{ color:"var(--muted)" }}>ฤกษ์ 1 แต้ม =</span>
           <input type="range" min="0" max="40" step="5" value={rate}
-            onChange={e=>onRate(Number(e.target.value))} className="flex-1" style={{ accentColor:"#8E1418" }} />
-          <span className="text-[11.5px] w-12 text-right shrink-0" style={{ color:"#C8A24A" }}>{rate} Elo</span>
+            onChange={e=>onRate(Number(e.target.value))} className="flex-1" style={{ accentColor:"var(--brand)" }} />
+          <span className="text-[13px] w-12 text-right shrink-0" style={{ color:"var(--accent)" }}>{rate} Elo</span>
         </div>
-        <p className="text-[10px] leading-relaxed" style={{ color:"#5A4E44" }}>
+        <p className="text-[12px] leading-relaxed" style={{ color:"var(--muted)" }}>
           แนะนำ 15 · เพดาน ±{OMEN_CAP} Elo เท่ากับความได้เปรียบเจ้าบ้าน · ตั้ง 0 เพื่อดูสถิติล้วน
         </p>
         {onSave && (
           <button onClick={()=>onSave({ ra, rb, pure, mixed })}
-            className="w-full py-2 rounded-sm text-[12px] mt-1"
-            style={{ background: saved?"#25402F":"#2A2320", color: saved?"#7FCBA3":"#C8A24A" }}>
+            className="w-full py-2 rounded-sm text-[13px] mt-1"
+            style={{ background: saved?"var(--good-bg)":"var(--card-2)", color: saved?"var(--good)":"var(--accent)" }}>
             {saved ? "บันทึกคำทำนายนัดนี้แล้ว · กดอีกครั้งเพื่อบันทึกทับ" : "บันทึกคำทำนายนัดนี้"}
           </button>
         )}
@@ -7323,10 +7488,10 @@ function OmenElo({ A, B, gap, teams, results, rate, onRate, cA, cB, onSave, save
 
 const Cell = ({ x, align }) => (
   <div className={align==="right" ? "text-right" : ""}>
-    <p className="text-[12px] truncate" style={{ color:"#C9BCAB" }}>{x.p.n||x.p.th}</p>
+    <p className="text-[13px] truncate" style={{ color:"var(--text)" }}>{x.p.n||x.p.th}</p>
     <div className="flex items-baseline gap-1" style={{ justifyContent: align==="right"?"flex-end":"flex-start" }}>
-      <span className="text-[10.5px]" style={{ color:REL_HEX[x.s.relY.key] }}>{x.s.relY.label}</span>
-      <span className="text-[11px]" style={{ color: x.s.raw>=1?TONE.good : x.s.raw<=-1?TONE.bad : TONE.mid }}>
+      <span className="text-[12px]" style={{ color:REL_HEX[x.s.relY.key] }}>{x.s.relY.label}</span>
+      <span className="text-[12px]" style={{ color: x.s.raw>=1?TONE.good : x.s.raw<=-1?TONE.bad : TONE.mid }}>
         {x.s.raw>0?"+":""}{x.s.raw.toFixed(1)}
       </span>
     </div>
@@ -7351,36 +7516,39 @@ function AccuracyPanel({ predictions, onRemovePredict, onPurge }) {
   };
 
   if (!predictions.length) return (
-    <div className="rounded-sm p-3" style={{ background:"#211B17", border:"1px solid #302823" }}>
-      <p className="text-[11px] mb-1" style={{ color:"#C8A24A" }}>ความแม่นยำของแอป</p>
-      <p className="text-[11.5px] leading-relaxed" style={{ color:"#6B5D50" }}>
-        ยังไม่มีคำทำนายที่บันทึกไว้ — ไปที่แท็บเปรียบเทียบ เลื่อนลงถึงแผง "สถิติเทียบฤกษ์"
-        แล้วกดปุ่มบันทึกก่อนเกมเริ่ม พอกรอกผลจริงในหน้านี้ ระบบจะจับคู่ให้เอง
+    <div className="rounded-xl p-4" style={{ background:"var(--card)", border:"1px solid var(--line)" }}>
+      <h2 className="text-[15px] font-medium mb-1" style={{ color:"var(--text-strong)" }}>ความแม่นยำของแอป</h2>
+      <p className="text-[13px] leading-relaxed" style={{ color:"var(--muted)" }}>
+        ยังไม่มีคำทำนายที่บันทึกไว้ — ไปที่แท็บเปรียบเทียบ เปิดหัวข้อ "Elo และบันทึกคำทำนาย"
+        แล้วกดบันทึกก่อนเกมเริ่ม พอมีผลจริง ระบบจะจับคู่ให้เอง
       </p>
     </div>
   );
 
-  const Pct = ({ v }) => <span style={{ color: v==null?"#5A4E44" : v>0.5?TONE.good : v<0.5?TONE.bad : TONE.mid }}>
+  const Pct = ({ v }) => <span style={{ color: v==null?"var(--muted)" : v>0.5?TONE.good : v<0.5?TONE.bad : TONE.mid }}>
     {v==null ? "—" : (v*100).toFixed(0)+"%"}</span>;
 
   return (
-    <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-      <p className="px-3 py-2 text-[11px]" style={{ background:"#2A2320", color:"#C8A24A" }}>
-        ความแม่นยำของแอป · บันทึกไว้ {predictions.length} นัด รู้ผลแล้ว {done.length}
+    <div className="rounded-xl overflow-hidden" style={{ background:"var(--card)", border:"1px solid var(--line)" }}>
+      <div className="px-4 pt-3.5 pb-2.5">
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-[15px] font-medium flex-1" style={{ color:"var(--text-strong)" }}>ความแม่นยำของแอป</h2>
+          <span className="text-[12px] tabnum" style={{ color:"var(--muted)" }}>รู้ผล {done.length}/{predictions.length} นัด</span>
+        </div>
         {(() => {
           const conf = predictions.filter(p => p.lineupSource === "confirmed").length;
           const other = predictions.length - conf;
-          return <><br/><span style={{ color:"#6B5D50" }}>
-            บันทึกอัตโนมัติเฉพาะนัดที่ยืนยัน 11 ตัวจริงครบสองทีม
-            · จากตัวจริงที่ประกาศ <span style={{ color:"#7FCBA3" }}>{conf}</span> นัด
-            {other ? <> · จากรายชื่อคาดการณ์หรือบันทึกเอง <span style={{ color:"#D8A94A" }}>{other}</span></> : null}
-          </span></>; })()}
-      </p>
+          return <p className="text-[12px] mt-1 leading-relaxed" style={{ color:"var(--muted)" }}>
+            บันทึกอัตโนมัติเฉพาะนัดที่ยืนยันตัวจริงครบสองทีม
+            · จากตัวจริงที่ประกาศ <span style={{ color:"var(--good)" }}>{conf}</span> นัด
+            {other ? <> · จากรายชื่อคาดการณ์หรือบันทึกเอง <span style={{ color:"var(--warn)" }}>{other}</span></> : null}
+          </p>; })()}
+      </div>
 
       {onPurge && predictions.some(p => p.auto && p.lineupSource !== "confirmed") && (
         <div className="px-3 pb-2">
-          <button onClick={onPurge} className="w-full rounded-sm text-[11.5px]"
-            style={{ minHeight:"40px", background:"#3A2A10", color:"#D8A94A" }}>
+          <button onClick={onPurge} className="w-full rounded-sm text-[13px]"
+            style={{ minHeight:"40px", background:"var(--warn-bg)", color:"var(--warn)" }}>
             ลบคำทำนายอัตโนมัติที่ไม่ได้มาจากตัวจริงที่ประกาศ
             ({predictions.filter(p => p.auto && p.lineupSource !== "confirmed").length} รายการ)
           </button>
@@ -7388,104 +7556,104 @@ function AccuracyPanel({ predictions, onRemovePredict, onPurge }) {
       )}
 
       {!an ? (
-        <p className="px-3 py-3 text-[11.5px]" style={{ color:"#6B5D50" }}>
+        <p className="px-3 py-3 text-[13px]" style={{ color:"var(--muted)" }}>
           บันทึกไว้ {predictions.length} นัด แต่ยังไม่มีนัดไหนรู้ผล กรอกผลการแข่งด้านบนแล้วระบบจะจับคู่ให้
         </p>
       ) : (<>
         {an.n < 20 && (
-          <p className="mx-3 mt-2 text-[11px] px-2 py-1.5 rounded-sm" style={{ background:"#3A2A10", color:"#D8A94A" }}>
+          <p className="mx-3 mt-2 text-[12px] px-2 py-1.5 rounded-sm" style={{ background:"var(--warn-bg)", color:"var(--warn)" }}>
             มีแค่ {an.n} นัด ตัวเลขทั้งหมดข้างล่างยังเป็นความบังเอิญได้สูง ต้องมีอย่างน้อย 50 นัดถึงจะเริ่มเชื่อได้
           </p>
         )}
 
-        <div className="px-3 py-2.5" style={{ borderTop:"1px solid #2A2320" }}>
-          <p className="text-[10.5px] mb-1.5" style={{ color:"#6B5D50" }}>ฤกษ์ชี้ทีมไหน ทีมนั้นชนะจริงไหม (ตัดนัดเสมอออก)</p>
-          <p className="text-[15px]"><Pct v={an.omen.pct} />
-            <span className="text-[11.5px] ml-2" style={{ color:"#8B7C6C" }}>
+        <div className="px-3 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+          <p className="text-[12px] mb-1.5" style={{ color:"var(--muted)" }}>ฤกษ์ชี้ทีมไหน ทีมนั้นชนะจริงไหม (ตัดนัดเสมอออก)</p>
+          <p className="text-[17px]"><Pct v={an.omen.pct} />
+            <span className="text-[13px] ml-2" style={{ color:"var(--text-2)" }}>
               ถูก {an.omen.hit} จาก {an.omen.n} นัด · เดาสุ่มได้ 50%
             </span>
           </p>
         </div>
 
-        <div className="px-3 py-2.5" style={{ borderTop:"1px solid #2A2320" }}>
-          <p className="text-[10.5px] mb-1.5" style={{ color:"#6B5D50" }}>คะแนนบรีเออร์ — ยิ่งต่ำยิ่งแม่น</p>
+        <div className="px-3 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+          <p className="text-[12px] mb-1.5" style={{ color:"var(--muted)" }}>คะแนนบรีเออร์ — ยิ่งต่ำยิ่งแม่น</p>
           <div className="flex gap-4">
-            <div><p className="text-[10px]" style={{ color:"#5A4E44" }}>สถิติล้วน</p>
-              <p className="text-[14px]" style={{ color:"#C9BCAB" }}>{an.bPure.toFixed(4)}</p></div>
-            <div><p className="text-[10px]" style={{ color:"#5A4E44" }}>รวมฤกษ์</p>
-              <p className="text-[14px]" style={{ color: an.bMixed<an.bPure?TONE.good:TONE.bad }}>{an.bMixed.toFixed(4)}</p></div>
+            <div><p className="text-[12px]" style={{ color:"var(--muted)" }}>สถิติล้วน</p>
+              <p className="text-[15px]" style={{ color:"var(--text)" }}>{an.bPure.toFixed(4)}</p></div>
+            <div><p className="text-[12px]" style={{ color:"var(--muted)" }}>รวมฤกษ์</p>
+              <p className="text-[15px]" style={{ color: an.bMixed<an.bPure?TONE.good:TONE.bad }}>{an.bMixed.toFixed(4)}</p></div>
             <div className="flex-1 text-right">
-              <p className="text-[10px]" style={{ color:"#5A4E44" }}>ฤกษ์ช่วยหรือทำให้แย่ลง</p>
-              <p className="text-[13px]" style={{ color: an.bMixed<an.bPure?TONE.good:TONE.bad }}>
+              <p className="text-[12px]" style={{ color:"var(--muted)" }}>ฤกษ์ช่วยหรือทำให้แย่ลง</p>
+              <p className="text-[15px]" style={{ color: an.bMixed<an.bPure?TONE.good:TONE.bad }}>
                 {an.bMixed<an.bPure ? "ช่วย" : "แย่ลง"} {Math.abs(an.bMixed-an.bPure).toFixed(4)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="px-3 py-2.5" style={{ borderTop:"1px solid #2A2320" }}>
-          <p className="text-[10.5px] mb-1.5" style={{ color:"#6B5D50" }}>
-            อัตราแปลง Elo ที่แม่นที่สุดจากข้อมูลจริง = <span style={{ color:"#C8A24A" }}>{an.bestRate.rate}</span>
+        <div className="px-3 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+          <p className="text-[12px] mb-1.5" style={{ color:"var(--muted)" }}>
+            อัตราแปลง Elo ที่แม่นที่สุดจากข้อมูลจริง = <span style={{ color:"var(--accent)" }}>{an.bestRate.rate}</span>
           </p>
           <div className="flex items-end gap-0.5 h-12">
             {an.sweep.map(x=>{
               const lo = Math.min(...an.sweep.map(y=>y.brier)), hi = Math.max(...an.sweep.map(y=>y.brier));
               const h = hi>lo ? 6 + (1-(x.brier-lo)/(hi-lo))*40 : 24;
               return <div key={x.rate} className="flex-1 rounded-t-sm" title={`${x.rate}: ${x.brier.toFixed(4)}`}
-                style={{ height:h, background: x.rate===an.bestRate.rate?"#C8A24A":"#3A302A" }} />;
+                style={{ height:h, background: x.rate===an.bestRate.rate?"var(--accent)":"var(--line)" }} />;
             })}
           </div>
-          <div className="flex justify-between text-[9px] mt-0.5" style={{ color:"#5A4E44" }}>
+          <div className="flex justify-between text-[12px] mt-0.5" style={{ color:"var(--muted)" }}>
             <span>0</span><span>20</span><span>40</span>
           </div>
         </div>
 
-        <div className="px-3 py-2.5" style={{ borderTop:"1px solid #2A2320" }}>
-          <p className="text-[10.5px] mb-0.5" style={{ color:"#6B5D50" }}>
+        <div className="px-3 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+          <p className="text-[12px] mb-0.5" style={{ color:"var(--muted)" }}>
             องค์ประกอบไหนสัมพันธ์กับผลจริง
           </p>
-          <p className="text-[10px] mb-1.5" style={{ color:"#5A4E44" }}>
+          <p className="text-[12px] mb-1.5" style={{ color:"var(--muted)" }}>
             เส้นประคือระดับความบังเอิญที่ {an.n} นัด (±{an.noise.toFixed(2)}) — ตัวที่ไม่ล้ำเส้นยังบอกอะไรไม่ได้
           </p>
           {Object.entries(an.comps).filter(([k,v])=>v!=null)
             .sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).map(([k,v])=>(
             <div key={k} className="flex items-center gap-2 py-0.5">
-              <span className="text-[11.5px] w-[104px] shrink-0" style={{ color:"#C9BCAB" }}>{COMP_TH[k]||k}</span>
-              <div className="flex-1 relative h-2.5 rounded-sm" style={{ background:"#0E0B09" }}>
-                <div className="absolute inset-y-0 left-1/2 w-px" style={{ background:"#4A3F38" }} />
+              <span className="text-[13px] w-[104px] shrink-0" style={{ color:"var(--text)" }}>{COMP_TH[k]||k}</span>
+              <div className="flex-1 relative h-2.5 rounded-sm" style={{ background:"var(--sunk)" }}>
+                <div className="absolute inset-y-0 left-1/2 w-px" style={{ background:"var(--line-2)" }} />
                 {[-1,1].map(sgn=>(
                   <div key={sgn} className="absolute inset-y-0 w-px"
-                    style={{ left:`${50+sgn*an.noise*50}%`, background:"#6B5D50", opacity:.7,
-                      backgroundImage:"repeating-linear-gradient(0deg,#6B5D50 0 2px,transparent 2px 4px)" }} />
+                    style={{ left:`${50+sgn*an.noise*50}%`, background:"var(--muted)", opacity:.7,
+                      backgroundImage:"repeating-linear-gradient(0deg,var(--muted) 0 2px,transparent 2px 4px)" }} />
                 ))}
                 <div className="absolute inset-y-0 rounded-sm"
-                  style={{ background: Math.abs(v)>an.noise ? (v>0?TONE.good:TONE.bad) : "#4A3F38",
+                  style={{ background: Math.abs(v)>an.noise ? (v>0?TONE.good:TONE.bad) : "var(--line-2)",
                     left: v>=0?"50%":`${50+v*50}%`, width:`${Math.abs(v)*50}%` }} />
               </div>
-              <span className="text-[11px] w-11 text-right shrink-0"
-                style={{ color: Math.abs(v)>an.noise?(v>0?TONE.good:TONE.bad):"#5A4E44" }}>
+              <span className="text-[12px] w-11 text-right shrink-0"
+                style={{ color: Math.abs(v)>an.noise?(v>0?TONE.good:TONE.bad):"var(--muted)" }}>
                 {v>0?"+":""}{v.toFixed(2)}
               </span>
             </div>
           ))}
         </div>
 
-        <div className="px-3 py-2.5" style={{ borderTop:"1px solid #2A2320" }}>
-          <p className="text-[10.5px] mb-0.5" style={{ color:"#6B5D50" }}>ทดลองคู่ขนาน · รวมดวงผู้เล่น เทียบ ตัดออก</p>
-          <p className="text-[10px] mb-1.5" style={{ color:"#5A4E44" }}>
+        <div className="px-3 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+          <p className="text-[12px] mb-0.5" style={{ color:"var(--muted)" }}>ทดลองคู่ขนาน · รวมดวงผู้เล่น เทียบ ตัดออก</p>
+          <p className="text-[12px] mb-1.5" style={{ color:"var(--muted)" }}>
             บันทึกทั้งสองแบบทุกนัดโดยอัตโนมัติ ตัดสินเมื่อจบฤดูกาล ไม่ปรับโมเดลระหว่างทาง
           </p>
           {[["รวมดวงผู้เล่น (ปัจจุบัน)", an.omen],
             ["ตัดดวงผู้เล่นออก", an.noSquad],
             ["ทายเจ้าบ้านล้วน ไม่ใช้ฤกษ์", an.homeOnly]].map(([lb,v])=>(
             <div key={lb} className="flex items-baseline gap-2 py-0.5">
-              <span className="text-[11.5px] flex-1" style={{ color:"#C9BCAB" }}>{lb}</span>
-              <span className="text-[10.5px]" style={{ color:"#5A4E44" }}>{v&&v.n?`${v.hit}/${v.n}`:"—"}</span>
-              <span className="text-[12px] w-11 text-right">{v&&v.pct!=null?<Pct v={v.pct} />:<span style={{color:"#5A4E44"}}>—</span>}</span>
+              <span className="text-[13px] flex-1" style={{ color:"var(--text)" }}>{lb}</span>
+              <span className="text-[12px]" style={{ color:"var(--muted)" }}>{v&&v.n?`${v.hit}/${v.n}`:"—"}</span>
+              <span className="text-[13px] w-11 text-right">{v&&v.pct!=null?<Pct v={v.pct} />:<span style={{color:"var(--muted)"}}>—</span>}</span>
             </div>
           ))}
           {an.omen && an.noSquad && an.omen.n>=20 && an.noSquad.n>=20 && (
-            <p className="text-[10px] mt-1.5" style={{ color:"#6B5D50" }}>
+            <p className="text-[12px] mt-1.5" style={{ color:"var(--muted)" }}>
               ที่ n≈{Math.round((an.omen.n+an.noSquad.n)/2)} ความผันผวนปกติราว ±{(Math.sqrt(0.25/((an.omen.n+an.noSquad.n)/2))*100).toFixed(0)} จุด
               — ความต่างที่น้อยกว่านี้ยังแยกไม่ออก
             </p>
@@ -7493,49 +7661,56 @@ function AccuracyPanel({ predictions, onRemovePredict, onPurge }) {
         </div>
 
         {Object.values(an.schools).some(Boolean) && (
-          <div className="px-3 py-2.5" style={{ borderTop:"1px solid #2A2320" }}>
-            <p className="text-[10.5px] mb-1.5" style={{ color:"#6B5D50" }}>ศาสตร์ไหนทายถูกบ่อยกว่ากัน</p>
+          <div className="px-3 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+            <p className="text-[12px] mb-1.5" style={{ color:"var(--muted)" }}>ศาสตร์ไหนทายถูกบ่อยกว่ากัน</p>
             {Object.entries(an.schools).filter(([k,v])=>v).map(([k,v])=>(
               <div key={k} className="flex items-baseline gap-2 py-0.5">
-                <span className="text-[11.5px] flex-1" style={{ color:"#C9BCAB" }}>{SCHOOL_TH[k]||k}</span>
-                <span className="text-[10.5px]" style={{ color:"#5A4E44" }}>{v.hit}/{v.n}</span>
-                <span className="text-[12px] w-11 text-right"><Pct v={v.pct} /></span>
+                <span className="text-[13px] flex-1" style={{ color:"var(--text)" }}>{SCHOOL_TH[k]||k}</span>
+                <span className="text-[12px]" style={{ color:"var(--muted)" }}>{v.hit}/{v.n}</span>
+                <span className="text-[13px] w-11 text-right"><Pct v={v.pct} /></span>
               </div>
             ))}
           </div>
         )}
       </>)}
 
-      <div className="px-3 py-2.5 flex gap-2" style={{ borderTop:"1px solid #2A2320" }}>
-        <button onClick={copyJson} className="flex-1 py-2 rounded-sm text-[12px]"
-          style={{ background:"#2A2320", color:"#C8A24A" }}>คัดลอกข้อมูลดิบ (JSON)</button>
-        <button onClick={()=>setShowRaw(!showRaw)} className="px-3 py-2 rounded-sm text-[12px]"
-          style={{ background:"#2A2320", color:"#8B7C6C" }}>{showRaw?"ซ่อน":"ดู"}</button>
+      <details style={{ borderTop:"1px solid var(--line)" }}>
+      <summary className="flex items-center gap-2 px-4 py-3 select-none">
+        <span className="text-[13px] flex-1" style={{ color:"var(--text)" }}>รายการคำทำนายทั้งหมด</span>
+        <span className="text-[12px]" style={{ color:"var(--muted)" }}>{predictions.length} นัด</span>
+        <span className="chev text-[17px] leading-none" style={{ color:"var(--muted)" }}>›</span>
+      </summary>
+      <div className="px-3 py-2.5 flex gap-2" style={{ borderTop:"1px solid var(--line)" }}>
+        <button onClick={copyJson} className="flex-1 py-2 rounded-sm text-[13px]"
+          style={{ background:"var(--card-2)", color:"var(--accent)" }}>คัดลอกข้อมูลดิบ (JSON)</button>
+        <button onClick={()=>setShowRaw(!showRaw)} className="px-3 py-2 rounded-sm text-[13px]"
+          style={{ background:"var(--card-2)", color:"var(--text-2)" }}>{showRaw?"ซ่อน":"ดู"}</button>
       </div>
 
       {showRaw && (
         <textarea readOnly value={JSON.stringify(predictions, null, 1)}
           onClick={e=>e.target.select()}
-          className="w-full h-40 px-2 py-2 text-[9px] outline-none"
-          style={{ background:"#0E0B09", color:"#8B7C6C", fontFamily:"ui-monospace,monospace", border:"none" }} />
+          className="w-full h-40 px-2 py-2 text-[12px] outline-none"
+          style={{ background:"var(--sunk)", color:"var(--text-2)", fontFamily:"ui-monospace,monospace", border:"none" }} />
       )}
 
-      <div style={{ borderTop:"1px solid #2A2320" }}>
+      <div style={{ borderTop:"1px solid var(--line)" }}>
         {predictions.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(p=>(
-          <div key={p.id} className="flex items-center gap-2 px-3 py-1.5" style={{ borderTop:"1px solid #241E1A" }}>
-            <span className="text-[10px] w-[58px] shrink-0" style={{ color:"#5A4E44" }}>{p.date}</span>
-            <span className="flex-1 text-[11px] truncate" style={{ color:"#C9BCAB" }}>{p.home} พบ {p.away}</span>
-            <span className="text-[10.5px] shrink-0" style={{ color: p.gap>0?TONE.good:TONE.bad }}>
+          <div key={p.id} className="flex items-center gap-2 px-3 py-1.5" style={{ borderTop:"1px solid var(--line)" }}>
+            <span className="text-[12px] w-[58px] shrink-0" style={{ color:"var(--muted)" }}>{p.date}</span>
+            <span className="flex-1 text-[12px] truncate" style={{ color:"var(--text)" }}>{p.home} พบ {p.away}</span>
+            <span className="text-[12px] shrink-0" style={{ color: p.gap>0?TONE.good:TONE.bad }}>
               {p.gap>0?"+":""}{p.gap.toFixed(2)}
             </span>
-            <span className="text-[10.5px] w-10 text-right shrink-0"
-              style={{ color: !p.result ? "#5A4E44" : ((p.gap>0)===(p.result.y===1) && p.result.y!==0.5) ? TONE.good : p.result.y===0.5 ? TONE.mid : TONE.bad }}>
+            <span className="text-[12px] w-10 text-right shrink-0"
+              style={{ color: !p.result ? "var(--muted)" : ((p.gap>0)===(p.result.y===1) && p.result.y!==0.5) ? TONE.good : p.result.y===0.5 ? TONE.mid : TONE.bad }}>
               {p.result ? `${p.result.hg}-${p.result.ag}` : "รอผล"}
             </span>
-            <button onClick={()=>onRemovePredict(p.id)} className="text-[11px] shrink-0" style={{ color:"#8E5A54" }}>ลบ</button>
+            <button onClick={()=>onRemovePredict(p.id)} className="text-[12px] shrink-0" style={{ color:"var(--bad)" }}>ลบ</button>
           </div>
         ))}
       </div>
+      </details>
     </div>
   );
 }
@@ -7616,48 +7791,48 @@ function RatingPanel({ teams, cache, ratings }) {
   if (!st.n) return null;
   const Row = ({ lbl, o, v, col }) => (
     <div className="flex items-baseline gap-2 py-1">
-      <span className="text-[11.5px] w-20 shrink-0" style={{ color:"#8B7C6C" }}>{lbl}</span>
-      <span className="text-[10.5px] w-16 shrink-0" style={{ color:"#5A4E44" }}>ดวง {o>0?"+":""}{o.toFixed(2)}</span>
-      <div className="flex-1 h-2 rounded-sm" style={{ background:"#0E0B09" }}>
+      <span className="text-[13px] w-20 shrink-0" style={{ color:"var(--text-2)" }}>{lbl}</span>
+      <span className="text-[12px] w-16 shrink-0" style={{ color:"var(--muted)" }}>ดวง {o>0?"+":""}{o.toFixed(2)}</span>
+      <div className="flex-1 h-2 rounded-sm" style={{ background:"var(--sunk)" }}>
         <div className="h-full rounded-sm" style={{ width:`${Math.max(0,Math.min(100,(v-5.5)/2*100))}%`, background:col }} />
       </div>
-      <span className="text-[12px] w-9 text-right shrink-0" style={{ color:"#E9E1D0" }}>{v.toFixed(2)}</span>
+      <span className="text-[13px] w-9 text-right shrink-0" style={{ color:"var(--text-strong)" }}>{v.toFixed(2)}</span>
     </div>
   );
   return (
-    <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-      <p className="px-3 py-2 text-[11px]" style={{ background:"#2A2320", color:"#C8A24A" }}>
+    <div className="rounded-xl overflow-hidden" style={{ background:"var(--card)", border:"1px solid var(--line)" }}>
+      <p className="px-4 pt-3 pb-1.5 text-[15px] font-medium" style={{ color:"var(--text-strong)" }}>
         ดวงรายคน เทียบ ฟอร์มจริง · {st.n} คน
       </p>
       {st.n < 20 ? (
-        <p className="px-3 py-3 text-[11.5px]" style={{ color:"#6B5D50" }}>
+        <p className="px-3 py-3 text-[13px]" style={{ color:"var(--muted)" }}>
           มีแค่ {st.n} คน ยังน้อยเกินกว่าจะคำนวณอะไรได้
         </p>
       ) : (<>
-        <div className="px-3 py-2.5" style={{ borderTop:"1px solid #2A2320" }}>
-          <p className="text-[10.5px] mb-1.5" style={{ color:"#6B5D50" }}>
+        <div className="px-3 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+          <p className="text-[12px] mb-1.5" style={{ color:"var(--muted)" }}>
             ถ้าศาสตร์ใช้ได้ แท่งล่างต้องสั้นกว่าแท่งบน (ดวงดี = ฟอร์มดี)
           </p>
-          <Row lbl="ดวงแย่สุด" o={st.loO} v={st.lo} col="#C0453D" />
-          <Row lbl="กลางๆ" o={(st.loO+st.hiO)/2} v={st.mid} col="#8B7C6C" />
-          <Row lbl="ดวงดีสุด" o={st.hiO} v={st.hi} col="#4E9C7A" />
-          <p className="text-[11px] mt-1.5" style={{ color: st.hi>st.lo ? TONE.good : TONE.bad }}>
+          <Row lbl="ดวงแย่สุด" o={st.loO} v={st.lo} col={TONE.bad} />
+          <Row lbl="กลางๆ" o={(st.loO+st.hiO)/2} v={st.mid} col="var(--text-2)" />
+          <Row lbl="ดวงดีสุด" o={st.hiO} v={st.hi} col={TONE.good} />
+          <p className="text-[12px] mt-1.5" style={{ color: st.hi>st.lo ? TONE.good : TONE.bad }}>
             {st.hi > st.lo
               ? `กลุ่มดวงดีฟอร์มสูงกว่ากลุ่มดวงแย่ ${(st.hi-st.lo).toFixed(2)} แต้ม — ไปทางเดียวกับศาสตร์`
               : `กลุ่มดวงดีฟอร์มต่ำกว่ากลุ่มดวงแย่ ${(st.lo-st.hi).toFixed(2)} แต้ม — สวนทางกับศาสตร์`}
           </p>
         </div>
-        <div className="px-3 py-2.5" style={{ borderTop:"1px solid #2A2320" }}>
-          <p className="text-[10.5px] mb-1" style={{ color:"#6B5D50" }}>สหสัมพันธ์</p>
-          <p className="text-[15px]" style={{ color: st.sig ? (st.r>0?TONE.good:TONE.bad) : "#C9BCAB" }}>
+        <div className="px-3 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+          <p className="text-[12px] mb-1" style={{ color:"var(--muted)" }}>สหสัมพันธ์</p>
+          <p className="text-[17px]" style={{ color: st.sig ? (st.r>0?TONE.good:TONE.bad) : "var(--text)" }}>
             r = {st.r>=0?"+":""}{st.r.toFixed(3)}
-            <span className="text-[11px] ml-2" style={{ color:"#8B7C6C" }}>
+            <span className="text-[12px] ml-2" style={{ color:"var(--text-2)" }}>
               เกณฑ์นัยสำคัญ |r| &gt; {st.thr.toFixed(3)} · {st.sig ? "มีนัยสำคัญ" : "ยังไม่มีนัยสำคัญ"}
             </span>
           </p>
         </div>
-        <p className="px-3 py-2.5 text-[10.5px] leading-relaxed"
-          style={{ borderTop:"1px solid #2A2320", background:"#1A1512", color:"#6B5D50" }}>
+        <p className="px-3 py-2.5 text-[12px] leading-relaxed"
+          style={{ borderTop:"1px solid var(--line)", background:"var(--sunk)", color:"var(--muted)" }}>
           คะแนนฟอร์มมาจาก WhoScored หนึ่งนัดให้ข้อมูล 22 จุด ต่างจากผลแพ้ชนะที่ให้จุดเดียว
           ตัวเลขจึงนิ่งเร็วกว่ามาก · ถ้า r ติดลบอย่างมีนัยสำคัญ แปลว่าคะแนนดวงทำนายกลับด้าน
           ซึ่งก็เป็นข้อมูลที่ใช้ได้เหมือนกัน ไม่ใช่เรื่องเสียหาย
@@ -7667,7 +7842,7 @@ function RatingPanel({ teams, cache, ratings }) {
   );
 }
 
-function CardPanel({ teams, cache, cards, onAdd, onRemove }) {
+function CardPanel({ teams, cache, cards, onAdd, onRemove, bare }) {
   const [c, setC] = useState({ date: todayISO(), team: "", player: "", minute: "", type: "Y" });
   const tm = teams.find(t => t.name === c.team);
   const squad = tm ? (cache[tm.slug] || []).filter(p => p.pos !== "ผจก.") : [];
@@ -7675,36 +7850,36 @@ function CardPanel({ teams, cache, cards, onAdd, onRemove }) {
   const nR = list.filter(x => x.type !== "Y").length;
 
   return (
-    <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-      <p className="px-3 py-2 text-[11px]" style={{ background:"#2A2320", color:"#C8A24A" }}>
+    <div className={bare ? "" : "rounded-xl overflow-hidden"} style={bare ? undefined : { background:"var(--card)", border:"1px solid var(--line)" }}>
+      {!bare && <p className="px-4 pt-3 pb-1.5 text-[15px] font-medium" style={{ color:"var(--text-strong)" }}>
         บันทึกใบเหลือง-ใบแดง · {list.length} ใบ (แดง {nR})
-      </p>
+      </p>}
 
-      <div className="px-3 py-2.5 space-y-2" style={{ borderBottom:"1px solid #2A2320" }}>
+      <div className="px-3 py-2.5 space-y-2" style={{ borderBottom:"1px solid var(--line)" }}>
         <div className="flex gap-2">
           <input type="date" value={c.date} onChange={e=>setC({...c,date:e.target.value})}
-            className="flex-1 min-w-0 px-2 rounded-sm text-[12px] text-stone-100 outline-none"
-            style={{ minHeight:"40px", background:"#171310", border:"1px solid #362D27" }} />
+            className="flex-1 min-w-0 px-2 rounded-sm text-[13px] text-stone-100 outline-none"
+            style={{ minHeight:"40px", background:"var(--bg)", border:"1px solid var(--line)" }} />
           <select value={c.type} onChange={e=>setC({...c,type:e.target.value})}
-            className="px-1.5 rounded-sm text-[11.5px] text-stone-100 outline-none"
-            style={{ minHeight:"40px", background:"#171310", border:"1px solid #362D27" }}>
+            className="px-1.5 rounded-sm text-[13px] text-stone-100 outline-none"
+            style={{ minHeight:"40px", background:"var(--bg)", border:"1px solid var(--line)" }}>
             {CARD_TYPES.map(([v,l])=><option key={v} value={v} style={OPT}>{l}</option>)}
           </select>
         </div>
         <div className="flex gap-2">
           <select value={c.team} onChange={e=>setC({...c,team:e.target.value,player:""})}
-            className="flex-1 min-w-0 px-1.5 rounded-sm text-[11.5px] text-stone-100 outline-none"
-            style={{ minHeight:"40px", background:"#171310", border:"1px solid #362D27" }}>
+            className="flex-1 min-w-0 px-1.5 rounded-sm text-[13px] text-stone-100 outline-none"
+            style={{ minHeight:"40px", background:"var(--bg)", border:"1px solid var(--line)" }}>
             <option value="" style={OPT}>เลือกทีม</option>
             {sortTeams(teams).map(t=><option key={t.slug} value={t.name} style={OPT}>{t.name}</option>)}
           </select>
           <input value={c.minute} onChange={e=>setC({...c,minute:e.target.value})} inputMode="numeric" placeholder="นาที"
-            className="w-16 px-1 rounded-sm text-[12px] text-center text-stone-100 outline-none"
-            style={{ minHeight:"40px", background:"#171310", border:"1px solid #362D27" }} />
+            className="w-16 px-1 rounded-sm text-[13px] text-center text-stone-100 outline-none"
+            style={{ minHeight:"40px", background:"var(--bg)", border:"1px solid var(--line)" }} />
         </div>
         <select value={c.player} onChange={e=>setC({...c,player:e.target.value})} disabled={!squad.length}
-          className="w-full px-1.5 rounded-sm text-[11.5px] text-stone-100 outline-none"
-          style={{ minHeight:"40px", background:"#171310", border:"1px solid #362D27", opacity: squad.length?1:0.5 }}>
+          className="w-full px-1.5 rounded-sm text-[13px] text-stone-100 outline-none"
+          style={{ minHeight:"40px", background:"var(--bg)", border:"1px solid var(--line)", opacity: squad.length?1:0.5 }}>
           <option value="" style={OPT}>{squad.length ? "เลือกผู้เล่น (ตัวจริงหรือตัวสำรองก็ได้)" : "เลือกทีมก่อน"}</option>
           {squad.map(p=><option key={p.id} value={p.n||p.th} style={OPT}>{p.n||p.th} · {p.pos}</option>)}
         </select>
@@ -7712,41 +7887,41 @@ function CardPanel({ teams, cache, cards, onAdd, onRemove }) {
             onAdd({ id:"c"+Date.now(), date:c.date, team:c.team, player:c.player,
                     minute: c.minute===""? null : Number(c.minute), type:c.type });
             setC({...c, player:"", minute:""}); } }}
-          className="w-full rounded-sm text-[12.5px]" style={{ minHeight:"42px", background:"#8E1418", color:"#FBF3E2" }}>
+          className="w-full rounded-sm text-[13px]" style={{ minHeight:"42px", background:"var(--brand)", color:"var(--on-brand)" }}>
           เพิ่มใบ
         </button>
       </div>
 
       {list.length === 0 ? (
-        <p className="px-3 py-3 text-[11px] leading-relaxed" style={{ color:"#6B5D50" }}>
+        <p className="px-3 py-3 text-[12px] leading-relaxed" style={{ color:"var(--muted)" }}>
           ยังไม่มีข้อมูล · บันทึกไว้เฉยๆ ก่อน ยังไม่เอาไปคิดคะแนน
           รอสะสมสัก 30-40 ใบ ค่อยดูว่าคนที่ติดสัญญาณ 刑 หรือ 沖 ได้ใบมากกว่าคนที่ไม่ติดจริงไหม
         </p>
       ) : list.map(x => {
         const o = cardOmen(x, teams, cache);
-        const col = (CARD_TYPES.find(t=>t[0]===x.type)||[])[2] || "#8B7C6C";
+        const col = (CARD_TYPES.find(t=>t[0]===x.type)||[])[2] || "var(--text-2)";
         return (
-          <div key={x.id} className="px-3 py-2" style={{ borderTop:"1px solid #241E1A" }}>
+          <div key={x.id} className="px-3 py-2" style={{ borderTop:"1px solid var(--line)" }}>
             <div className="flex items-baseline gap-2">
               <span className="w-2.5 h-4 rounded-sm shrink-0" style={{ background:col }} />
-              <span className="text-[12.5px] flex-1 min-w-0 truncate" style={{ color:"#E9E1D0" }}>{x.player}</span>
-              <span className="text-[10.5px] shrink-0" style={{ color:"#6B5D50" }}>
+              <span className="text-[13px] flex-1 min-w-0 truncate" style={{ color:"var(--text-strong)" }}>{x.player}</span>
+              <span className="text-[12px] shrink-0" style={{ color:"var(--muted)" }}>
                 {x.minute!=null ? x.minute+"'" : ""} · {thDate(x.date)}
               </span>
-              <button onClick={()=>onRemove(x.id)} className="text-[12px] shrink-0 px-1" style={{ color:"#5A4E44" }}>✕</button>
+              <button onClick={()=>onRemove(x.id)} className="text-[13px] shrink-0 px-1" style={{ color:"var(--muted)" }}>✕</button>
             </div>
-            <p className="text-[10.5px] mt-0.5" style={{ color:"#6B5D50" }}>
+            <p className="text-[12px] mt-0.5" style={{ color:"var(--muted)" }}>
               {x.team}
               {o ? <> · ดวงวันนั้น <span style={{ color: o.raw>0?TONE.good:TONE.bad }}>{o.raw>0?"+":""}{o.raw.toFixed(2)}</span>
-                {o.flags.length ? <> · <span style={{ color:"#D8A94A" }}>{o.flags.join(" · ")}</span></> : <> · ไม่มีสัญญาณ 刑/沖</>}</> : " · คำนวณดวงไม่ได้"}
+                {o.flags.length ? <> · <span style={{ color:"var(--warn)" }}>{o.flags.join(" · ")}</span></> : <> · ไม่มีสัญญาณ 刑/沖</>}</> : " · คำนวณดวงไม่ได้"}
             </p>
           </div>
         );
       })}
 
       {list.length > 0 && (
-        <p className="px-3 py-2.5 text-[10.5px] leading-relaxed"
-          style={{ borderTop:"1px solid #2A2320", background:"#1A1512", color:"#6B5D50" }}>
+        <p className="px-3 py-2.5 text-[12px] leading-relaxed"
+          style={{ borderTop:"1px solid var(--line)", background:"var(--sunk)", color:"var(--muted)" }}>
           ตัวเลขดวงข้างบนเป็นข้อมูลประกอบ ยังไม่ได้เอาไปคิดคะแนนหรือสร้างดัชนีใดๆ
           เพราะในหนึ่งนัดมีคนติดสัญญาณ 刑 หรือ 沖 ราวสามในสี่อยู่แล้ว
           การชี้ย้อนหลังว่าคนได้ใบมีสัญญาณจึงไม่ได้พิสูจน์อะไร ต้องรอข้อมูลมากพอแล้วเทียบกับคนที่ไม่ได้ใบ
@@ -7773,10 +7948,10 @@ function StatsTab({ teams, fx, cache = {}, results, ratings = [], cards = [], on
   const ranked = Object.entries(elo.rating).sort((a,b)=>b[1]-a[1]);
 
   const Bar = ({ pH, pD, pA }) => (
-    <div className="flex h-6 rounded-sm overflow-hidden text-[10px]" style={{ background:"#0E0B09" }}>
-      {[[pH,"#4E9C7A"],[pD,"#8B7C6C"],[pA,"#C0453D"]].map(([v,c],i)=>(
+    <div className="flex h-6 rounded-md overflow-hidden text-[12px] tabnum" style={{ background:"var(--sunk)" }}>
+      {[[pH,"var(--good)"],[pD,"var(--muted)"],[pA,"var(--bad)"]].map(([v,c],i)=>(
         <div key={i} className="flex items-center justify-center"
-          style={{ width:`${v*100}%`, background:c, color:"#141110" }}>
+          style={{ width:`${v*100}%`, background:c, color:"var(--card)" }}>
           {v>0.12 ? `${Math.round(v*100)}%` : ""}
         </div>
       ))}
@@ -7785,89 +7960,127 @@ function StatsTab({ teams, fx, cache = {}, results, ratings = [], cards = [], on
 
   return (
     <div className="px-4 space-y-3">
-      <div className="rounded-sm p-3" style={{ background:"#211B17", border:"1px solid #302823" }}>
-        <p className="text-[11px] mb-2" style={{ color:"#C8A24A" }}>ทำนายคู่ที่เลือกในแท็บเปรียบเทียบ</p>
+      <AccuracyPanel predictions={predictions} onRemovePredict={onRemovePredict} />
+
+      {ranked.length > 0 && (
+        <Card title="ตาราง Elo" note={`จาก ${results.length} นัด · เริ่มต้น ${ELO_START}`}>
+          <table className="w-full">
+            <thead><tr><TH w="28px">#</TH><TH>ทีม</TH><TH right w="56px">นัด</TH><TH right w="56px">Elo</TH></tr></thead>
+            <tbody>
+              {ranked.map(([n,v],i)=>(
+                <tr key={n}>
+                  <TD color="var(--muted)">{i+1}</TD>
+                  <TD>{n}</TD>
+                  <TD right color="var(--muted)">{elo.played[n]||0}</TD>
+                  <TD right strong>{Math.round(v)}</TD>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+
+      <RatingPanel teams={teams} cache={cache} ratings={ratings} />
+
+      <Fold title="คู่ที่เลือกอยู่" meta={hName && aName ? `${teamCode(hName)} – ${teamCode(aName)} · Elo · Poisson` : "ยังไม่ได้เลือก"}>
+        <div className="px-4 py-3">
+      <div>
         {ef ? (<>
-          <p className="text-[13px] mb-2" style={{ color:"#E9E1D0" }}>{hName} พบ {aName}</p>
+          <p className="text-[15px] mb-2" style={{ color:"var(--text-strong)" }}>{hName} พบ {aName}</p>
           {results.length < 10 && (
-            <p className="text-[11px] mb-2 px-2 py-1.5 rounded-sm" style={{ background:"#3A2A10", color:"#D8A94A" }}>
+            <p className="text-[12px] mb-2 px-2 py-1.5 rounded-sm" style={{ background:"var(--warn-bg)", color:"var(--warn)" }}>
               มีผลแข่ง {results.length} นัด ตัวเลขยังเชื่อไม่ได้ — ควรใส่อย่างน้อย 30 นัด
             </p>
           )}
-          <p className="text-[11px] mb-1" style={{ color:"#8B7C6C" }}>
+          <p className="text-[12px] mb-1" style={{ color:"var(--text-2)" }}>
             Elo {Math.round(ef.ra)} – {Math.round(ef.rb)} (บวกเจ้าบ้าน {ELO_HOME})
           </p>
           <Bar pH={ef.home} pD={ef.draw} pA={ef.away} />
           {pf ? (<>
-            <p className="text-[11px] mt-3 mb-1" style={{ color:"#8B7C6C" }}>
+            <p className="text-[12px] mt-3 mb-1" style={{ color:"var(--text-2)" }}>
               Poisson คาดประตู {pf.lh.toFixed(2)} – {pf.la.toFixed(2)} · สกอร์น่าจะเป็นที่สุด {pf.best.h}–{pf.best.a} ({(pf.best.p*100).toFixed(1)}%)
             </p>
             <Bar pH={pf.pH} pD={pf.pD} pA={pf.pA} />
-          </>) : <p className="text-[11px] mt-3" style={{ color:"#6B5D50" }}>Poisson ต้องมีผลแข่งของทั้งสองทีมก่อน</p>}
-        </>) : <p className="text-[12px]" style={{ color:"#6B5D50" }}>เลือกสองทีมในแท็บเปรียบเทียบก่อน</p>}
+          </>) : <p className="text-[12px] mt-3" style={{ color:"var(--muted)" }}>Poisson ต้องมีผลแข่งของทั้งสองทีมก่อน</p>}
+        </>) : <p className="text-[13px]" style={{ color:"var(--muted)" }}>เลือกสองทีมในแท็บเปรียบเทียบก่อน</p>}
       </div>
-
       {mg && (
-      <div className="rounded-sm p-3" style={{ background:"#211B17", border:"1px solid #302823" }}>
-        <p className="text-[11px] mb-1" style={{ color:"#C8A24A" }}>
+      <div className="pt-4 mt-4" style={{ borderTop:"1px solid var(--line)" }}>
+        <p className="text-[12px] mb-1" style={{ color:"var(--accent)" }}>
           ราคาตลาด {mkt.closed ? "(ราคาปิด)" : "(ราคาก่อนเตะ)"}
         </p>
-        <p className="text-[10.5px] mb-2" style={{ color:"#6B5D50" }}>
+        <p className="text-[12px] mb-2" style={{ color:"var(--muted)" }}>
           ส่วนต่างเจ้ามือ {(mkt.margin*100).toFixed(1)}% · ตัดออกแล้ว · วัดย้อนหลัง 89 นัด ตลาดทายตัวเต็งถูก 67.2% โมเดลเรา 60.3%
         </p>
         <Bar pH={mg.pH} pD={mg.pD} pA={mg.pA} />
-        <p className="text-[10.5px] mt-2 mb-1" style={{ color:"#8B7C6C" }}>
+        <p className="text-[12px] mt-2 mb-1" style={{ color:"var(--text-2)" }}>
           ประตูที่ตลาดคาด {mg.lh.toFixed(2)} – {mg.la.toFixed(2)} · สกอร์ที่น่าจะเป็น
         </p>
         <div className="flex flex-wrap gap-1.5 mb-2">
           {mg.top.map((c,i)=>(
-            <span key={i} className="px-1.5 py-0.5 rounded-sm text-[11px]"
-              style={{ background:"#171310", border:"1px solid #362D27", color:i?"#C9BCAB":"#E9E1D0" }}>
-              {c.h}–{c.a} <span style={{ color:"#8B7C6C" }}>{(c.p*100).toFixed(1)}%</span>
+            <span key={i} className="px-1.5 py-0.5 rounded-sm text-[12px]"
+              style={{ background:"var(--bg)", border:"1px solid var(--line)", color:i?"var(--text)":"var(--text-strong)" }}>
+              {c.h}–{c.a} <span style={{ color:"var(--text-2)" }}>{(c.p*100).toFixed(1)}%</span>
             </span>
           ))}
         </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]" style={{ color:"#C9BCAB" }}>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px]" style={{ color:"var(--text)" }}>
           <span>เกิน 2.5 ลูก <b>{(mg.over25*100).toFixed(0)}%</b></span>
           <span>ยิงกันทั้งคู่ <b>{(mg.btts*100).toFixed(0)}%</b></span>
           <span>เจ้าบ้านคลีนชีต <b>{(mg.csHome*100).toFixed(0)}%</b></span>
           <span>เยือนคลีนชีต <b>{(mg.csAway*100).toFixed(0)}%</b></span>
         </div>
         {tg && (<>
-          <p className="text-[10.5px] mt-3 mb-1" style={{ color:"#8B7C6C" }}>
+          <p className="text-[12px] mt-3 mb-1" style={{ color:"var(--text-2)" }}>
             เอียงด้วยดวง k={OMEN_TILT_K} (ค่านี้เลือกจากการทดสอบนอกตัวอย่าง เกือบศูนย์เพราะดวงแทบไม่เพิ่มข้อมูลจากตลาด)
           </p>
           <Bar pH={tg.pH} pD={tg.pD} pA={tg.pA} />
-          <p className="text-[10.5px] mt-1" style={{ color:"#6B5D50" }}>
+          <p className="text-[12px] mt-1" style={{ color:"var(--muted)" }}>
             ต่างจากตลาด {((tg.pH-mg.pH)*100>=0?"+":"")}{((tg.pH-mg.pH)*100).toFixed(2)} จุดฝั่งเจ้าบ้าน
           </p>
         </>)}
       </div>
       )}
+        </div>
+      </Fold>
 
-      <div className="rounded-sm p-3" style={{ background:"#211B17", border:"1px solid #302823" }}>
-        <p className="text-[11px] mb-2" style={{ color:"#C8A24A" }}>บันทึกผลการแข่ง</p>
+      {results.length > 0 && (
+        <Fold title="ผลที่บันทึกไว้" meta={`${results.length} นัด`}>
+          {results.slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).map(g=>(
+            <div key={g.id} className="flex items-center gap-2 px-3 py-1.5" style={{ borderTop:"1px solid var(--line)" }}>
+              <span className="text-[12px] w-[62px] shrink-0" style={{ color:"var(--muted)" }}>{g.date}</span>
+              <span className="flex-1 text-[13px] truncate text-right" style={{ color:"var(--text)" }}>{g.home}</span>
+              <span className="text-[13px] px-1.5 shrink-0" style={{ color:"var(--accent)" }}>{g.hg}–{g.ag}</span>
+              <span className="flex-1 text-[13px] truncate" style={{ color:"var(--text)" }}>{g.away}</span>
+              <button onClick={()=>onRemove(g.id)} className="text-[12px] shrink-0" style={{ color:"var(--bad)" }}>ลบ</button>
+            </div>
+          ))}
+        </Fold>
+      )}
+
+      <Fold title="เพิ่มผลการแข่ง" meta="กรอกเอง">
+      <div className="px-4 py-3">
         <div className="space-y-2">
           <input type="date" value={f.date} onChange={e=>setF({...f,date:e.target.value})}
-            className="w-full px-2 py-2 rounded-sm text-[12.5px] outline-none"
-            style={{ background:"#171310", border:"1px solid #362D27", color:"#C8A24A" }} />
+            className="w-full px-2 py-2 rounded-sm text-[13px] outline-none"
+            style={{ background:"var(--bg)", border:"1px solid var(--line)", color:"var(--accent)" }} />
           <div className="flex items-center gap-1.5">
             <select value={f.home} onChange={e=>setF({...f,home:e.target.value})}
-              className="flex-1 min-w-0 px-1.5 py-2 rounded-sm text-[11.5px] text-stone-100 outline-none"
-              style={{ background:"#171310", border:"1px solid #362D27" }}>
+              className="flex-1 min-w-0 px-1.5 py-2 rounded-sm text-[13px] text-stone-100 outline-none"
+              style={{ background:"var(--bg)", border:"1px solid var(--line)" }}>
               <option value="" style={OPT}>เจ้าบ้าน</option>
               {names.map(n=><option key={n} value={n} style={OPT}>{n}</option>)}
             </select>
             <input value={f.hg} onChange={e=>setF({...f,hg:e.target.value})} inputMode="numeric" placeholder="0"
-              className="w-9 px-1 py-2 rounded-sm text-[13px] text-center text-stone-100 outline-none"
-              style={{ background:"#171310", border:"1px solid #362D27" }} />
-            <span style={{ color:"#6B5D50" }}>–</span>
+              className="w-9 px-1 py-2 rounded-sm text-[15px] text-center text-stone-100 outline-none"
+              style={{ background:"var(--bg)", border:"1px solid var(--line)" }} />
+            <span style={{ color:"var(--muted)" }}>–</span>
             <input value={f.ag} onChange={e=>setF({...f,ag:e.target.value})} inputMode="numeric" placeholder="0"
-              className="w-9 px-1 py-2 rounded-sm text-[13px] text-center text-stone-100 outline-none"
-              style={{ background:"#171310", border:"1px solid #362D27" }} />
+              className="w-9 px-1 py-2 rounded-sm text-[15px] text-center text-stone-100 outline-none"
+              style={{ background:"var(--bg)", border:"1px solid var(--line)" }} />
             <select value={f.away} onChange={e=>setF({...f,away:e.target.value})}
-              className="flex-1 min-w-0 px-1.5 py-2 rounded-sm text-[11.5px] text-stone-100 outline-none"
-              style={{ background:"#171310", border:"1px solid #362D27" }}>
+              className="flex-1 min-w-0 px-1.5 py-2 rounded-sm text-[13px] text-stone-100 outline-none"
+              style={{ background:"var(--bg)", border:"1px solid var(--line)" }}>
               <option value="" style={OPT}>ทีมเยือน</option>
               {names.map(n=><option key={n} value={n} style={OPT}>{n}</option>)}
             </select>
@@ -7875,58 +8088,24 @@ function StatsTab({ teams, fx, cache = {}, results, ratings = [], cards = [], on
           <button onClick={()=>{ if(f.home && f.away && f.home!==f.away && f.hg!=="" && f.ag!==""){
               onAdd({ id:"g"+Date.now(), date:f.date, home:f.home, away:f.away, hg:Number(f.hg), ag:Number(f.ag) });
               setF({ ...f, hg:"", ag:"" }); } }}
-            className="w-full py-2 rounded-sm text-[12.5px]" style={{ background:"#8E1418", color:"#FBF3E2" }}>
+            className="w-full py-2 rounded-sm text-[13px]" style={{ background:"var(--brand)", color:"var(--on-brand)" }}>
             เพิ่มผล
           </button>
         </div>
       </div>
+      </Fold>
 
-      <RatingPanel teams={teams} cache={cache} ratings={ratings} />
+      <Fold title="ใบเหลือง-แดง" meta={`${cards.length} ใบ · บันทึกและเพิ่ม`}>
+        <CardPanel teams={teams} cache={cache} cards={cards} onAdd={onAddCard} onRemove={onRemoveCard} bare />
+      </Fold>
 
-      <CardPanel teams={teams} cache={cache} cards={cards} onAdd={onAddCard} onRemove={onRemoveCard} />
-
-      {ranked.length > 0 && (
-        <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-          <p className="px-3 py-2 text-[11px]" style={{ background:"#2A2320", color:"#C8A24A" }}>
-            ตาราง Elo ({results.length} นัด)
-          </p>
-          {ranked.map(([n,v],i)=>(
-            <div key={n} className="flex items-center gap-2 px-3 py-1.5" style={{ borderTop:"1px solid #241E1A" }}>
-              <span className="w-5 text-[10.5px]" style={{ color:"#5A4E44" }}>{i+1}</span>
-              <span className="flex-1 text-[12px] truncate" style={{ color:"#C9BCAB" }}>{n}</span>
-              <span className="text-[10.5px] w-10 text-right" style={{ color:"#5A4E44" }}>{elo.played[n]||0} นัด</span>
-              <span className="text-[12.5px] w-12 text-right"
-                style={{ color: v>ELO_START?TONE.good : v<ELO_START?TONE.bad : TONE.mid }}>{Math.round(v)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {results.length > 0 && (
-        <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-          <p className="px-3 py-2 text-[11px]" style={{ background:"#2A2320", color:"#C8A24A" }}>ผลที่บันทึกไว้</p>
-          {results.slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).map(g=>(
-            <div key={g.id} className="flex items-center gap-2 px-3 py-1.5" style={{ borderTop:"1px solid #241E1A" }}>
-              <span className="text-[10px] w-[62px] shrink-0" style={{ color:"#5A4E44" }}>{g.date}</span>
-              <span className="flex-1 text-[11.5px] truncate text-right" style={{ color:"#C9BCAB" }}>{g.home}</span>
-              <span className="text-[12px] px-1.5 shrink-0" style={{ color:"#C8A24A" }}>{g.hg}–{g.ag}</span>
-              <span className="flex-1 text-[11.5px] truncate" style={{ color:"#C9BCAB" }}>{g.away}</span>
-              <button onClick={()=>onRemove(g.id)} className="text-[11px] shrink-0" style={{ color:"#8E5A54" }}>ลบ</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <AccuracyPanel predictions={predictions} onRemovePredict={onRemovePredict} />
-
-      <p className="text-[10.5px] leading-relaxed pb-2" style={{ color:"#6B5D50" }}>
+      <p className="text-[12px] leading-relaxed pb-2" style={{ color:"var(--muted)" }}>
         Elo เริ่มจากความเก่งที่ตั้งไว้ในหน้าจัดการทีม · K={ELO_K} ปรับตามผลต่างประตู · บวกเจ้าบ้าน {ELO_HOME} แต้ม
         · Poisson คำนวณกำลังรุกและกำลังรับจากค่าเฉลี่ยลีก
       </p>
     </div>
   );
 }
-
 
 /* สรุปว่าจัดตัวจริงครบทีมไหนแล้ว ขาดทีมไหน */
 function LineupSummary({ teams, onOpen }) {
@@ -7938,12 +8117,12 @@ function LineupSummary({ teams, onOpen }) {
 
   const Group = ({ label, list, color, showCount }) => list.length ? (
     <div className="pt-2">
-      <p className="text-[10.5px] mb-1" style={{ color }}>{label} · {list.length} ทีม</p>
+      <p className="text-[12px] mb-1" style={{ color }}>{label} · {list.length} ทีม</p>
       <div className="flex flex-wrap gap-1">
         {list.map(t=>(
           <button key={t.slug} onClick={()=>onOpen(t.slug)}
-            className="text-[11px] px-1.5 py-1 rounded-sm"
-            style={{ background:"#2A2320", color:"#C9BCAB" }}>
+            className="text-[12px] px-1.5 py-1 rounded-sm"
+            style={{ background:"var(--card-2)", color:"var(--text)" }}>
             {t.name}{showCount ? ` ${t.lineup.start.length}/11` : ""}
           </button>
         ))}
@@ -7952,26 +8131,26 @@ function LineupSummary({ teams, onOpen }) {
   ) : null;
 
   return (
-    <div className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-      <button onClick={()=>setOpen(!open)} className="w-full px-3 py-2.5 text-left">
+    <div className="rounded-xl overflow-hidden" style={{ background:"var(--card)", border:"1px solid var(--line)" }}>
+      <button onClick={()=>setOpen(!open)} className="w-full px-4 py-3.5 text-left">
         <div className="flex items-baseline gap-2">
-          <span className="text-[11px] flex-1" style={{ color:"#C8A24A" }}>จัดตัวจริงแล้วกี่ทีม</span>
-          <span className="text-[13px]" style={{ color: full.length===all.length?TONE.good:"#C9BCAB" }}>
+          <span className="text-[15px] font-medium flex-1" style={{ color:"var(--text-strong)" }}>จัดตัวจริงแล้ว</span>
+          <span className="text-[15px]" style={{ color: full.length===all.length?TONE.good:"var(--text)" }}>
             {full.length}/{all.length}
           </span>
-          <span className="text-[11px]" style={{ color:"#6B5D50" }}>{open?"▲":"▼"}</span>
+          <span className="text-[12px]" style={{ color:"var(--muted)" }}>{open?"▲":"▼"}</span>
         </div>
-        <div className="flex h-1.5 rounded-sm overflow-hidden mt-1.5" style={{ background:"#0E0B09" }}>
+        <div className="flex h-1.5 rounded-sm overflow-hidden mt-1.5" style={{ background:"var(--sunk)" }}>
           <div style={{ width:`${full.length/all.length*100}%`, background:TONE.good }} />
-          <div style={{ width:`${partial.length/all.length*100}%`, background:"#C8A24A" }} />
+          <div style={{ width:`${partial.length/all.length*100}%`, background:"var(--accent)" }} />
         </div>
       </button>
       {open && (
-        <div className="px-3 pb-3" style={{ borderTop:"1px solid #2A2320" }}>
+        <div className="px-3 pb-3" style={{ borderTop:"1px solid var(--line)" }}>
           <Group label="ครบ 11 คน"  list={full}    color={TONE.good} />
-          <Group label="ยังไม่ครบ"   list={partial} color="#C8A24A" showCount />
-          <Group label="ยังไม่ได้จัด" list={none}    color="#8B7C6C" />
-          <p className="text-[10px] mt-2.5 leading-relaxed" style={{ color:"#5A4E44" }}>
+          <Group label="ยังไม่ครบ"   list={partial} color="var(--accent)" showCount />
+          <Group label="ยังไม่ได้จัด" list={none}    color="var(--text-2)" />
+          <p className="text-[12px] mt-2.5 leading-relaxed" style={{ color:"var(--muted)" }}>
             แตะชื่อทีมเพื่อเปิดรายชื่อ · ทีมที่ยังไม่ได้จัด แอปจะคิดคะแนนจากผู้เล่นทั้งทีมแทน
           </p>
         </div>
@@ -8034,30 +8213,33 @@ function SeasonTab({ teams, results, predictions, onPick, fixtures, label }) {
 
   return (
     <div className="px-4 space-y-2">
-      <div className="rounded-sm p-3" style={{ background:"#211B17", border:"1px solid #302823" }}>
-        <p className="text-[11px] mb-2" style={{ color:"#C8A24A" }}>
-          {label || "พรีเมียร์ลีก 2026/27"} · แสดง {list.length} จาก {ALL.length} นัด · เวลาไทย
-        </p>
+      <div className="pt-1 pb-1">
+        <div className="flex items-baseline gap-2 px-1 mb-2">
+          <h2 className="text-[17px] flex-1" style={{ color:"var(--text-strong)" }}>{label || "พรีเมียร์ลีก 2026/27"}</h2>
+          <span className="text-[12px] tabnum" style={{ color:"var(--muted)" }}>{list.length}/{ALL.length} นัด · เวลาไทย</span>
+        </div>
+        <div className="flex gap-2">
         <select value={team} onChange={e=>setTeam(e.target.value)}
-          className="w-full px-2 py-2 rounded-sm text-[12.5px] text-stone-100 outline-none mb-2"
-          style={{ background:"#171310", border:"1px solid #362D27" }}>
+          className="flex-1 min-w-0 px-3 rounded-lg text-[13px] text-stone-100 outline-none"
+          style={{ minHeight:"40px", background:"var(--card)", border:"1px solid var(--line)" }}>
           <option value="" style={OPT}>ทุกทีม</option>
           {sortTeams(teams).filter(t => !fixtures || FX.some(f=>f.home===t.name||f.away===t.name))
             .map(t=><option key={t.slug} value={t.name} style={OPT}>{t.name}</option>)}
         </select>
-        <button onClick={()=>setShowPast(!showPast)} className="w-full py-1.5 rounded-sm text-[11.5px]"
-          style={{ background: showPast?"#3A2F26":"#2A2320", color: showPast?"#C8A24A":"#8B7C6C" }}>
-          {showPast ? `ซ่อนนัดที่ผ่านไปแล้ว (${pastCount})` : `แสดงนัดที่ผ่านไปแล้วด้วย (${pastCount})`}
+        <button onClick={()=>setShowPast(!showPast)} className="px-3 rounded-lg text-[12px] shrink-0"
+          style={{ minHeight:"40px", background: showPast?"var(--card-2)":"var(--card)", border:"1px solid var(--line)", color: showPast?"var(--accent)":"var(--text-2)" }}>
+          {showPast ? "ซ่อนนัดที่ผ่านแล้ว" : `นัดที่ผ่านแล้ว ${pastCount}`}
         </button>
+        </div>
       </div>
 
       {days.length === 0 && (
-        <p className="text-[12px] py-4 text-center" style={{ color:"#6B5D50" }}>ไม่มีนัดที่ตรงเงื่อนไข</p>
+        <p className="text-[13px] py-4 text-center" style={{ color:"var(--muted)" }}>ไม่มีนัดที่ตรงเงื่อนไข</p>
       )}
 
       {days.map(d=>(
-        <div key={d.date} className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
-          <p className="px-3 py-1.5 text-[11px]" style={{ background:"#2A2320", color: d.date===today?"#C8A24A":"#8B7C6C" }}>
+        <div key={d.date} className="rounded-xl overflow-hidden" style={{ background:"var(--card)", border:"1px solid var(--line)" }}>
+          <p className="px-3 py-2 text-[12px]" style={{ background:"var(--card-2)", color: d.date===today?"var(--accent)":"var(--text-2)" }}>
             {thDate(d.date)}{d.date===today ? " · วันนี้" : ""}
           </p>
           {d.games.map(g=>{
@@ -8068,24 +8250,24 @@ function SeasonTab({ teams, results, predictions, onPick, fixtures, label }) {
               <button key={g.id}
                 onClick={()=>onPick({ home:slugOf(g.home), away:slugOf(g.away), date:g.date, time:g.time })}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left"
-                style={{ borderTop:"1px solid #241E1A", opacity: done?0.5:1 }}>
-                <span className="text-[11px] w-10 shrink-0" style={{ color:"#6B5D50" }}>{g.time || "จบ"}</span>
-                {g.md && <span className="text-[9.5px] px-1 rounded shrink-0" style={{ background:"#2A2320", color:"#C8A24A" }}>นัด {g.md}</span>}
-                <span className="w-1 h-7 rounded-sm shrink-0" style={{ background:kitHex(g.home) }} />
+                style={{ borderTop:"1px solid var(--line)", opacity: done?0.5:1 }}>
+                <span className="text-[12px] w-10 shrink-0" style={{ color:"var(--muted)" }}>{g.time || "จบ"}</span>
+                {g.md && <span className="text-[12px] px-1 rounded shrink-0" style={{ background:"var(--card-2)", color:"var(--accent)" }}>นัด {g.md}</span>}
+                <span className="w-1 h-7 rounded-sm shrink-0" style={{ background:kitHex(g.home), boxShadow:"inset 0 0 0 1px var(--line-2)" }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12.5px] truncate" style={{ color:"#E9E1D0" }}>{g.home}</p>
-                  <p className="text-[12.5px] truncate" style={{ color:"#A79684" }}>{g.away}</p>
+                  <p className="text-[13px] truncate" style={{ color:"var(--text-strong)" }}>{g.home}</p>
+                  <p className="text-[13px] truncate" style={{ color:"var(--text)" }}>{g.away}</p>
                 </div>
-                {res && <span className="text-[12px] shrink-0" style={{ color:"#8B7C6C" }}>{res.hg}–{res.ag}</span>}
-                {pred && <span className="text-[9.5px] px-1 rounded shrink-0" style={{ background:"#25402F", color:"#7FCBA3" }}>ทำนายแล้ว</span>}
-                <span className="text-[13px] shrink-0" style={{ color:"#4A3F38" }}>›</span>
+                {res && <span className="text-[13px] shrink-0" style={{ color:"var(--text-2)" }}>{res.hg}–{res.ag}</span>}
+                {pred && <span className="text-[12px] px-1 rounded shrink-0" style={{ background:"var(--good-bg)", color:"var(--good)" }}>ทำนายแล้ว</span>}
+                <span className="text-[15px] shrink-0" style={{ color:"var(--line-2)" }}>›</span>
               </button>
             );
           })}
         </div>
       ))}
 
-      <p className="text-[10.5px] leading-relaxed pb-2" style={{ color:"#6B5D50" }}>
+      <p className="text-[12px] leading-relaxed pb-2" style={{ color:"var(--muted)" }}>
         แตะคู่ไหนก็ได้เพื่อเปิดในหน้าเปรียบเทียบ พร้อมวันและเวลาที่ตั้งไว้ให้แล้ว
         · เวลาทั้งหมดเป็นเวลาไทย แอปจะแปลงเป็นเวลาสนามเอง
       </p>
@@ -8101,7 +8283,7 @@ function SeasonTab({ teams, results, predictions, onPick, fixtures, label }) {
 const backupKeys = (teams) => [IDX, RESULTS_KEY, PREDICT_KEY, CARDS_KEY, RATINGS_KEY, "bazi:seedv", "bazi:cardseed", "bazi:ratingseed", "bazi:lineupseed",
   ...(teams || []).map(t => teamKey(t.slug))];
 
-function BackupBox({ teams }) {
+function BackupBox({ teams, bare }) {
   const [msg, setMsg] = useState("");
   const fileRef = useRef(null);
 
@@ -8134,22 +8316,22 @@ function BackupBox({ teams }) {
   };
 
   return (
-    <div className="rounded-sm p-3 mt-2" style={{ background:"#211B17", border:"1px solid #302823" }}>
-      <p className="text-[11px] mb-1" style={{ color:"#C8A24A" }}>สำรองข้อมูล</p>
-      <p className="text-[10.5px] leading-relaxed mb-2" style={{ color:"#6B5D50" }}>
+    <div className={bare ? "px-4 py-3" : "rounded-xl p-4"} style={bare ? undefined : { background:"var(--card)", border:"1px solid var(--line)" }}>
+      {!bare && <p className="text-[12px] mb-1" style={{ color:"var(--accent)" }}>สำรองข้อมูล</p>}
+      <p className="text-[12px] leading-relaxed mb-2" style={{ color:"var(--muted)" }}>
         ตอนนี้บันทึกไว้ที่ {BACKEND_TH[backend] || "ชั่วคราว"} · ข้อมูลผูกกับเบราว์เซอร์เครื่องนี้เท่านั้น
         ถ้าล้างข้อมูลเว็บหรือย้ายเครื่องจะหาย ควรดึงออกเป็นไฟล์เก็บไว้เป็นระยะ
       </p>
       <div className="flex gap-2">
-        <button onClick={save} className="flex-1 rounded-sm text-[12px]" style={{ minHeight:"44px", background:"#2A2320", color:"#E9E1D0" }}>
+        <button onClick={save} className="flex-1 rounded-sm text-[13px]" style={{ minHeight:"44px", background:"var(--card-2)", color:"var(--text-strong)" }}>
           ดึงออกเป็นไฟล์
         </button>
-        <button onClick={()=>fileRef.current?.click()} className="flex-1 rounded-sm text-[12px]" style={{ minHeight:"44px", background:"#2A2320", color:"#E9E1D0" }}>
+        <button onClick={()=>fileRef.current?.click()} className="flex-1 rounded-sm text-[13px]" style={{ minHeight:"44px", background:"var(--card-2)", color:"var(--text-strong)" }}>
           ใส่ไฟล์กลับคืน
         </button>
       </div>
       <input ref={fileRef} type="file" accept="application/json,.json" onChange={pick} style={{ display:"none" }} />
-      {msg && <p className="text-[11px] mt-2" style={{ color:"#D8A94A" }}>{msg}</p>}
+      {msg && <p className="text-[12px] mt-2" style={{ color:"var(--warn)" }}>{msg}</p>}
     </div>
   );
 }
@@ -8162,56 +8344,58 @@ function TeamsTab({ teams, cache, onAdd, onOpen, onMeta, onSync }) {
   return (
     <div className="px-4 space-y-2">
       <LineupSummary teams={teams} onOpen={onOpen} />
-      <BackupBox teams={teams} />
-
-      <p className="text-[10.5px] leading-relaxed px-1 pb-1" style={{ color:"#6B5D50" }}>
-        ความเก่ง 1-10 คือแต้ม Elo ตั้งต้นของทีม ใช้ตอนยังไม่มีผลแข่งในระบบ
-        พอกรอกผลในแท็บสถิติแล้ว Elo จะปรับตัวเองจากผลจริงแทน
-      </p>
 
       {missing.length > 0 && (
-        <button onClick={onSync} className="w-full py-2 rounded-sm text-[12px]"
-          style={{ background:"#3A2A10", color:"#D8A94A" }}>
+        <button onClick={onSync} className="w-full py-2 rounded-sm text-[13px]"
+          style={{ background:"var(--warn-bg)", color:"var(--warn)" }}>
           เพิ่มทีมที่ยังขาดอีก {missing.length} ทีม
         </button>
       )}
 
+      <section className="rounded-xl overflow-hidden" style={{ background:"var(--card)", border:"1px solid var(--line)", boxShadow:"var(--shadow)" }}>
+      <div className="px-4 pt-3.5 pb-2 flex items-baseline gap-2">
+        <h2 className="text-[15px] font-medium flex-1" style={{ color:"var(--text-strong)" }}>ทีมทั้งหมด</h2>
+        <span className="text-[12px]" style={{ color:"var(--muted)" }}>แตะชื่อเพื่อแก้รายชื่อ · แตะเลขเพื่อปรับความเก่ง</span>
+      </div>
       {sortTeams(teams).map(t=>{
         const pl = cache[t.slug]||[];
         const done = pl.filter(p=>p.b).length;
         const kits = t.kits || kitsFor(t.name);
         const hex = kits?.home?.hex || kitById(t.kit).hex;
+        const on = openVenue===t.slug;
         return (
-          <div key={t.slug} className="rounded-sm p-3" style={{ background:"#211B17", border:"1px solid #302823" }}>
-            <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-sm shrink-0 border"
-                style={{ background:hex, borderColor:"rgba(255,255,255,.15)" }} />
+          <div key={t.slug} className="px-4 py-2.5" style={{ borderTop:"1px solid var(--line)" }}>
+            <div className="flex items-center gap-3">
+              <span className="w-5 h-5 rounded-md shrink-0"
+                style={{ background:hex, boxShadow:"inset 0 0 0 1px var(--line-2)" }} />
               <button onClick={()=>onOpen(t.slug)} className="flex-1 text-left min-w-0">
-                <p className="text-[14px] text-stone-100 truncate">{t.name}</p>
-                <p className="text-[11px]" style={{ color:"#6B5D50" }}>
-                  {pl.length} คน · มีวันเกิด {done}{t.lineup?.start?.length ? ` · จัดตัวแล้ว ${t.lineup.start.length}/11` : ""}
+                <p className="text-[15px] truncate" style={{ color:"var(--text-strong)" }}>{t.name}</p>
+                <p className="text-[12px] tabnum" style={{ color:"var(--muted)" }}>
+                  {pl.length} คน · มีวันเกิด {done}{t.lineup?.start?.length ? ` · ตัวจริง ${t.lineup.start.length}/11` : ""}
                 </p>
+              </button>
+              <button onClick={()=>setOpenVenue(on?null:t.slug)} className="flex items-center gap-1.5 shrink-0 pl-2"
+                style={{ minHeight:"40px" }}>
+                <span className="text-[12px] tabnum" style={{ color:"var(--muted)" }}>{strengthToElo(t.strength)}</span>
+                <span className="text-[15px] tabnum w-6 h-6 rounded-md flex items-center justify-center"
+                  style={{ background:"var(--card-2)", color:"var(--accent)" }}>{t.strength ?? 5}</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop:"1px solid #2A2320" }}>
-              <span className="text-[10.5px] shrink-0" style={{ color:"#6B5D50" }}>ความเก่ง</span>
+            {on && (<>
+            <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop:"1px solid var(--line)" }}>
+              <span className="text-[12px] shrink-0" style={{ color:"var(--muted)" }}>ความเก่ง</span>
               <input type="range" min="1" max="10" step="1" value={t.strength ?? 5}
                 onChange={e=>onMeta(t.slug,{ strength:Number(e.target.value) })}
-                className="flex-1" style={{ accentColor:"#8E1418" }} />
-              <span className="text-[11.5px] w-6 text-center shrink-0" style={{ color:"#C8A24A" }}>{t.strength ?? 5}</span>
-              <span className="text-[10px] w-14 text-right shrink-0" style={{ color:"#5A4E44" }}>
+                className="flex-1" style={{ accentColor:"var(--brand)" }} />
+              <span className="text-[13px] w-6 text-center shrink-0" style={{ color:"var(--accent)" }}>{t.strength ?? 5}</span>
+              <span className="text-[12px] w-14 text-right shrink-0" style={{ color:"var(--muted)" }}>
                 {strengthToElo(t.strength)} Elo
               </span>
             </div>
 
-            <button onClick={()=>setOpenVenue(openVenue===t.slug?null:t.slug)}
-              className="w-full mt-2 pt-2 text-left text-[10.5px]"
-              style={{ borderTop:"1px solid #2A2320", color:"#6B5D50" }}>
-              สนาม {t.venue?.name || "ยังไม่ระบุ"} {openVenue===t.slug ? "▲" : "▼"}
-            </button>
-            {openVenue===t.slug && (
-              <div className="grid grid-cols-3 gap-1.5 mt-2">
+            <p className="text-[12px] mt-2" style={{ color:"var(--muted)" }}>สนาม {t.venue?.name || "ยังไม่ระบุ"}</p>
+              <div className="grid grid-cols-3 gap-1.5 mt-1.5">
                 <F label="ชื่อสนาม" value={t.venue?.name||""}
                   onChange={e=>onMeta(t.slug,{ venue:{...(t.venue||{tz:"Europe/London"}), name:e.target.value} })} />
                 <F label="ละติจูด" value={t.venue?.lat??""} inputMode="decimal"
@@ -8219,21 +8403,31 @@ function TeamsTab({ teams, cache, onAdd, onOpen, onMeta, onSync }) {
                 <F label="ลองจิจูด" value={t.venue?.lng??""} inputMode="decimal"
                   onChange={e=>onMeta(t.slug,{ venue:{...(t.venue||{tz:"Europe/London"}), lng:e.target.value} })} />
               </div>
-            )}
+            </>)}
           </div>
         );
       })}
+      </section>
 
-      <div className="rounded-sm p-3 mt-1" style={{ background:"#1C1714", border:"1px dashed #3A302A" }}>
-        <p className="text-[11px] mb-2" style={{ color:"#6B5D50" }}>เพิ่มทีมเอง</p>
+      <div className="rounded-xl p-4" style={{ border:"1px dashed var(--line-2)" }}>
+        <p className="text-[12px] mb-2" style={{ color:"var(--muted)" }}>เพิ่มทีมเอง</p>
         <div className="flex gap-2">
           <input value={name} onChange={e=>setName(e.target.value)} placeholder="ชื่อทีม"
-            className="flex-1 px-2.5 py-2 rounded-sm text-[13px] text-stone-100 outline-none"
-            style={{ background:"#171310", border:"1px solid #362D27" }} />
+            className="flex-1 px-2.5 py-2 rounded-sm text-[15px] text-stone-100 outline-none"
+            style={{ background:"var(--bg)", border:"1px solid var(--line)" }} />
           <button onClick={()=>{ if(name.trim()){ onAdd(name.trim(), PRESETS[name.trim()] ? name.trim() : null); setName(""); } }}
-            className="px-4 py-2 rounded-sm text-[12.5px]" style={{ background:"#8E1418", color:"#FBF3E2" }}>เพิ่ม</button>
+            className="px-4 py-2 rounded-sm text-[13px]" style={{ background:"var(--brand)", color:"var(--on-brand)" }}>เพิ่ม</button>
         </div>
       </div>
+
+      <Fold title="สำรองข้อมูล" meta="ดึงออกเป็นไฟล์ · ใส่กลับคืน">
+        <BackupBox teams={teams} bare />
+      </Fold>
+
+      <p className="text-[12px] leading-relaxed px-1 pb-2" style={{ color:"var(--muted)" }}>
+        ความเก่ง 1-10 คือแต้ม Elo ตั้งต้นของทีม ใช้ตอนยังไม่มีผลแข่งในระบบ
+        พอมีผลแข่งแล้ว Elo จะปรับตัวเองจากผลจริงแทน
+      </p>
     </div>
   );
 }
@@ -8250,75 +8444,75 @@ function SquadEditor({ team, players, day, onSave, onMeta, onDelete, onClose }) 
     .sort((a,b)=>(b.s?.raw ?? -99)-(a.s?.raw ?? -99));
 
   return (
-    <div className="fixed inset-0 z-40 overflow-y-auto" style={{ background:"#171310" }}>
+    <div className="fixed inset-0 z-40 overflow-y-auto" style={{ margin:0, background:"var(--bg)" }}>
       <div className="max-w-md mx-auto pb-24">
         <div className="sticky top-0 z-10 px-4 py-3 flex items-center gap-2"
-          style={{ background:"#171310", borderBottom:"1px solid #2A2320" }}>
-          <button onClick={onClose} className="text-[13px]" style={{ color:"#C8A24A" }}>‹ กลับ</button>
-          <p className="flex-1 text-center text-[14px] text-stone-100 truncate">{team?.name}</p>
+          style={{ background:"var(--bg)", borderBottom:"1px solid var(--line)" }}>
+          <button onClick={onClose} className="text-[15px]" style={{ color:"var(--accent)" }}>‹ กลับ</button>
+          <p className="flex-1 text-center text-[15px] text-stone-100 truncate">{team?.name}</p>
           <button onClick={()=>setDraft({ n:"", th:"", pos:"MF", b:"", time:"", ok:true })}
-            className="text-[13px]" style={{ color:"#C8A24A" }}>เพิ่ม</button>
+            className="text-[15px]" style={{ color:"var(--accent)" }}>เพิ่ม</button>
         </div>
 
         <div className="px-4 pt-3 space-y-2">
           {rows.map(({p,s})=>(
-            <div key={p.id} className="rounded-sm overflow-hidden" style={{ background:"#211B17", border:"1px solid #302823" }}>
+            <div key={p.id} className="rounded-xl overflow-hidden" style={{ background:"var(--card)", border:"1px solid var(--line)" }}>
               <button onClick={()=>setOpen(open===p.id?null:p.id)} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left">
-                <span className="text-[10px] w-8 shrink-0 text-center py-0.5 rounded"
-                  style={{ background:"#2A2320", color:"#8B7C6C" }}>{p.pos}</span>
+                <span className="text-[12px] w-8 shrink-0 text-center py-0.5 rounded"
+                  style={{ background:"var(--card-2)", color:"var(--text-2)" }}>{p.pos}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13.5px] text-stone-100 truncate">{p.n||p.th}</p>
-                  <p className="text-[11px] truncate" style={{ color:"#6B5D50" }}>
+                  <p className="text-[15px] text-stone-100 truncate">{p.n||p.th}</p>
+                  <p className="text-[12px] truncate" style={{ color:"var(--muted)" }}>
                     {p.b||"ยังไม่มีวันเกิด"}{s&&` · ปี${ZODIAC[s.pil.y[1]]}`}
                   </p>
                 </div>
                 {s && (
                   <div className="text-right shrink-0">
-                    <div style={{ fontFamily:"'Songti SC','Noto Serif SC',serif", fontSize:"18px", color:"#C8A24A", lineHeight:1 }}>
+                    <div style={{ fontFamily:"'Songti SC','Noto Serif SC',serif", fontSize:"18px", color:"var(--accent)", lineHeight:1 }}>
                       {gz(s.pil.d)}
                     </div>
-                    <span className="text-[10px]" style={{ color:REL_HEX[s.relY.key] }}>{s.relY.label}</span>
+                    <span className="text-[12px]" style={{ color:REL_HEX[s.relY.key] }}>{s.relY.label}</span>
                   </div>
                 )}
               </button>
 
               {open===p.id && (
-                <div className="px-3 pb-3" style={{ borderTop:"1px solid #302823" }}>
+                <div className="px-3 pb-3" style={{ borderTop:"1px solid var(--line)" }}>
                   {s && (<>
                     <div className="grid grid-cols-4 gap-1.5 my-2">
                       {[["ปี",s.pil.y],["เดือน",s.pil.m],["วัน",s.pil.d],["ยาม",s.pil.h]].map(([lab,pr])=>(
-                        <div key={lab} className="text-center rounded-sm py-2" style={{ background:"#1A1512" }}>
-                          <p className="text-[10px] mb-1" style={{ color:"#5A4E44" }}>{lab}</p>
+                        <div key={lab} className="text-center rounded-sm py-2" style={{ background:"var(--sunk)" }}>
+                          <p className="text-[12px] mb-1" style={{ color:"var(--muted)" }}>{lab}</p>
                           {pr?(<>
                             <div style={{ fontFamily:"'Songti SC','Noto Serif SC',serif", fontSize:"20px", lineHeight:1.1, color:EL_HEX[STEM_EL[pr[0]]] }}>{STEMS[pr[0]]}</div>
                             <div style={{ fontFamily:"'Songti SC','Noto Serif SC',serif", fontSize:"20px", lineHeight:1.1, color:EL_HEX[BRANCH_EL[pr[1]]] }}>{BRANCHES[pr[1]]}</div>
-                          </>):<p className="text-[10px] py-3" style={{ color:"#4A3F38" }}>ไม่ทราบ<br/>เวลา</p>}
+                          </>):<p className="text-[12px] py-3" style={{ color:"var(--line-2)" }}>ไม่ทราบ<br/>เวลา</p>}
                         </div>
                       ))}
                     </div>
-                    <div className="text-[11.5px] space-y-1" style={{ color:"#A79684" }}>
+                    <div className="text-[13px] space-y-1" style={{ color:"var(--text)" }}>
                       <p>นักษัตร <span className="text-stone-200">{ZODIAC_FULL[s.pil.y[1]]} ({ZODIAC[s.pil.y[1]]})</span> · ธาตุประจำตัว <span className="text-stone-200">{EL[s.myEl]}</span>{s.elNote&&` · ${s.elNote}`}</p>
                       <p>ปีเกิดกับวันแข่ง <span style={{color:REL_HEX[s.relY.key]}}>{s.relY.label}</span> · วันเกิดกับวันแข่ง <span style={{color:REL_HEX[s.relD.key]}}>{s.relD.label}</span></p>
                       <p>ธาตุซ่อนในกิ่งวัน <span className="text-stone-200">{HIDDEN[s.pil.d[1]].map(x=>STEMS[x]+"("+EL[STEM_EL[x]]+")").join(" ")}</span></p>
-                      {p.src && <p style={{ color:"#5A4E44" }}>ที่มา: {p.src}</p>}
+                      {p.src && <p style={{ color:"var(--muted)" }}>ที่มา: {p.src}</p>}
                     </div>
                   </>)}
                   <div className="flex gap-2 mt-3">
                     <button onClick={()=>commit(list.map(x=>x.id===p.id?{...x,ok:!x.ok}:x))}
-                      className="flex-1 py-1.5 rounded-sm text-[12px]"
-                      style={{ background:p.ok?"#25402F":"#2A2320", color:p.ok?"#7FCBA3":"#A79684" }}>
+                      className="flex-1 py-1.5 rounded-sm text-[13px]"
+                      style={{ background:p.ok?"var(--good-bg)":"var(--card-2)", color:p.ok?"var(--good)":"var(--text)" }}>
                       {p.ok?"ยืนยันแล้ว":"ทำเครื่องหมายว่าตรวจแล้ว"}
                     </button>
-                    <button onClick={()=>setDraft(p)} className="px-4 py-1.5 rounded-sm text-[12px]"
-                      style={{ background:"#2A2320", color:"#C8A24A" }}>แก้ไข</button>
+                    <button onClick={()=>setDraft(p)} className="px-4 py-1.5 rounded-sm text-[13px]"
+                      style={{ background:"var(--card-2)", color:"var(--accent)" }}>แก้ไข</button>
                   </div>
                 </div>
               )}
             </div>
           ))}
 
-          <button onClick={onDelete} className="w-full mt-4 py-2 rounded-sm text-[12px]"
-            style={{ background:"#2A1416", color:"#B04A44" }}>
+          <button onClick={onDelete} className="w-full mt-4 py-2 rounded-sm text-[13px]"
+            style={{ background:"var(--bad-bg)", color:"var(--brand)" }}>
             ลบทีม {team?.name} ทั้งชุด
           </button>
         </div>
@@ -8342,17 +8536,17 @@ function PlayerSheet({ p, onClose, onSave, onRemove }) {
   const set = (k)=>(e)=>setF({ ...f, [k]:e.target.value });
   const pv = f.b ? fourPillars(f.b, f.time||null) : null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end" style={{ background:"rgba(0,0,0,.75)" }} onClick={onClose}>
-      <div className="w-full max-w-md mx-auto rounded-t-lg p-4 pb-8" style={{ background:"#211B17" }} onClick={e=>e.stopPropagation()}>
-        <h3 className="text-stone-100 text-[15px] mb-3">ข้อมูลผู้เล่น</h3>
+    <div className="fixed inset-0 z-50 flex items-end" style={{ margin:0, background:"rgba(0,0,0,.75)" }} onClick={onClose}>
+      <div className="w-full max-w-md mx-auto rounded-t-lg p-4 pb-8" style={{ background:"var(--card)" }} onClick={e=>e.stopPropagation()}>
+        <h3 className="text-stone-100 text-[17px] mb-3">ข้อมูลผู้เล่น</h3>
         <div className="space-y-2.5">
           <F label="ชื่อ" value={f.n||""} onChange={set("n")} placeholder="Bruno Fernandes" />
           <div className="grid grid-cols-2 gap-2.5">
             <div>
-              <label className="text-[11px] block mb-1" style={{ color:"#6B5D50" }}>ตำแหน่ง</label>
+              <label className="text-[12px] block mb-1" style={{ color:"var(--muted)" }}>ตำแหน่ง</label>
               <select value={f.pos} onChange={set("pos")}
-                className="w-full px-2.5 py-2 rounded-sm text-[13px] text-stone-100 outline-none"
-                style={{ background:"#171310", border:"1px solid #362D27" }}>
+                className="w-full px-2.5 py-2 rounded-sm text-[15px] text-stone-100 outline-none"
+                style={{ background:"var(--bg)", border:"1px solid var(--line)" }}>
                 {["ผจก.","GK","DF","MF","FW"].map(o=><option key={o} value={o} style={OPT}>{o}</option>)}
               </select>
             </div>
@@ -8360,14 +8554,14 @@ function PlayerSheet({ p, onClose, onSave, onRemove }) {
           </div>
         </div>
         {pv && (
-          <p className="mt-3 p-2.5 rounded-sm text-[12px] text-stone-200" style={{ background:"#171310" }}>
+          <p className="mt-3 p-2.5 rounded-sm text-[13px] text-stone-200" style={{ background:"var(--bg)" }}>
             {gz(pv.y)} {gz(pv.m)} {gz(pv.d)} · ปี{ZODIAC[pv.y[1]]}
           </p>
         )}
         <div className="flex gap-2 mt-4">
-          {onRemove && <button onClick={onRemove} className="px-4 py-2.5 rounded-sm text-[13px]" style={{ background:"#3A1416", color:"#E0574C" }}>ลบ</button>}
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-sm text-[13px]" style={{ background:"#2A2320", color:"#A79684" }}>ยกเลิก</button>
-          <button onClick={()=>onSave(f)} className="flex-1 py-2.5 rounded-sm text-[13px]" style={{ background:"#8E1418", color:"#FBF3E2" }}>บันทึก</button>
+          {onRemove && <button onClick={onRemove} className="px-4 py-2.5 rounded-sm text-[15px]" style={{ background:"var(--bad-bg)", color:"var(--brand)" }}>ลบ</button>}
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-sm text-[15px]" style={{ background:"var(--card-2)", color:"var(--text)" }}>ยกเลิก</button>
+          <button onClick={()=>onSave(f)} className="flex-1 py-2.5 rounded-sm text-[15px]" style={{ background:"var(--brand)", color:"var(--on-brand)" }}>บันทึก</button>
         </div>
       </div>
     </div>
