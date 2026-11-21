@@ -6923,6 +6923,8 @@ const SEED_XI = {
 };
 
 const SEED_LINEUPS = {
+  "Arsenal": { confirmed:true, forDate:"2026-11-21", kit:"away", start:["David Raya", "Jurriën Timber", "Ezri Konsa", "Gabriel Magalhães", "Riccardo Calafiori", "Declan Rice", "Bruno Guimarães", "Noni Madueke", "Martin Ødegaard", "Eberechi Eze", "Kai Havertz"] },
+  "Newcastle United": { confirmed:true, forDate:"2026-11-21", kit:"home", start:["Lukas Hornicek", "Amar Dedić", "Malick Thiaw", "Dan Burn", "Lewis Hall", "Lewis Miley", "Sean Steur", "Joe Willock", "Jacob Murphy", "Harvey Barnes", "William Osula"] },
   "Tottenham Hotspur": { confirmed:true, forDate:"2026-11-21", kit:"home", start:["Antonin Kinsky", "Destiny Udogie", "Marcos Senesi", "Jan Paul van Hecke", "Pedro Porro", "Mohammed Kudus", "Luca Williams-Barnett", "Mateus Fernandes", "Conor Gallagher", "James Maddison", "Dominic Solanke"] },
   "Chelsea": { confirmed:true, forDate:"2026-11-21", kit:"home", start:["Emiliano Martínez", "Joshua Acheampong", "Pep Chavarría", "Wesley Fofana", "Levi Colwill", "Estêvão", "Roméo Lavia", "Moisés Caicedo", "Cole Palmer", "Morgan Rogers", "Emanuel Emegha"] },
   "Ipswich Town": { confirmed:true, forDate:"2026-11-21", kit:"home", start:["Christian Walton", "Darnell Furlong", "Dara O'Shea", "Issa Diop", "Leif Davis", "Abdoul Ouattara", "Saša Lukić", "Julio Enciso", "Exequiel Palacios", "Daizen Maeda", "Zian Flemming"] },
@@ -6938,7 +6940,6 @@ const SEED_LINEUPS = {
   "Liverpool": { confirmed:false, forDate:"2026-11-22", kit:"home", start:["Alisson", "Milos Kerkez", "Virgil van Dijk", "Jeremy Jacquet", "Ronald Araújo", "Alexis Mac Allister", "Dominik Szoboszlai", "Bradley Barcola", "Florian Wirtz", "Cody Gakpo", "Alexander Isak"] },
   "Manchester United": { confirmed:false, forDate:"2026-11-22", kit:"third", start:["Senne Lammens", "Leny Yoro", "Harry Maguire", "Noussair Mazraoui", "Diogo Dalot", "Kobbie Mainoo", "Youri Tielemans", "Bruno Fernandes", "Amad Diallo", "Matheus Cunha", "Bryan Mbeumo"] },
   "AS Roma": { confirmed:true, forDate:"2026-11-03", kit:"away", start:["Devis Vásquez", "Gianluca Mancini", "Leonardo Balerdi", "Mario Hermoso", "Devyne Rensch", "Bryan Cristante", "Marten de Roon", "Wesley", "Rodrigo Mora", "Matías Soulé", "Donyell Malen"] },
-  "Arsenal": { confirmed:true, forDate:"2026-11-01", kit:"away", start:["David Raya", "Jurriën Timber", "Ezri Konsa", "Gabriel Magalhães", "Riccardo Calafiori", "Declan Rice", "Bruno Guimarães", "Noni Madueke", "Martin Ødegaard", "Christos Tzolis", "Kai Havertz"] },
   "Brighton": { confirmed:true, forDate:"2026-10-31", kit:"away", start:["Bart Verbruggen", "Costinha", "Luka Vuskovic", "Lewis Dunk", "Olivier Boscagli", "Pascal Groß", "Chema Andrés", "Diego Gómez", "Yasin Ayari", "Maxime De Cuyper", "Charalampos Kostoulas"] },
 
   "Hull City": { confirmed:true, forDate:"2026-10-31", kit:"home", start:["Konstantinos Tzolakis", "Lewie Coyle", "Semi Ajayi", "John Egan", "Nobel Mendy", "Ryan Giles", "Mohamed Belloumi", "Tim Iroegbunam", "Regan Slater", "Elliot Stroud", "Oli McBurnie"] },
@@ -6946,7 +6947,6 @@ const SEED_LINEUPS = {
   "Atlético Madrid": ["Jan Oblak","Marcos Llorente","Cristian Romero","Robin Le Normand","Álex Grimaldo",
     "Koke","Johnny Cardoso","Giuliano Simeone","Pablo Barrios","Ademola Lookman","Jonathan David"],
   "Brentford": { confirmed:true, forDate:"2026-10-31", kit:"home", start:["Caoimhin Kelleher", "Michael Kayode", "Kristoffer Ajer", "Sepp van den Berg", "Keane Lewis-Potter", "Mamadou Sangare", "Vitaly Janelt", "Dango Ouattara", "Mathias Jensen", "Kevin Schade", "Igor Thiago"] },
-  "Newcastle United": { confirmed:true, forDate:"2026-11-02", kit:"home", start:["Lukas Hornicek", "Amar Dedić", "Fabian Schär", "Dan Burn", "Lewis Hall", "Nico González", "Joelinton", "Anthony Elanga", "Joe Willock", "Harvey Barnes", "William Osula"] },
 };
 
 const LINEUP_SEED_VERSION = 26;
