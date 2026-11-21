@@ -1413,6 +1413,21 @@ function applySeedLineups(list, c) {
 }
 
 /* ═══════════ แอป ═══════════ */
+/* นัดพรีเมียร์ลีกถัดไปตามเวลาไทย ใช้เป็นคู่ตั้งต้นทุกครั้งที่เปิดแอป
+   นัดที่เตะไปแล้วไม่เกิน 2 ชั่วโมงยังนับเป็นนัดนี้ (กำลังแข่งอยู่) · เตะพร้อมกันหลายคู่ เอาคู่แรกในตาราง */
+const LIVE_WINDOW_MS = 2 * 60 * 60 * 1000;
+function nextLeagueFixture(teams, nowMs = Date.now()) {
+  const slug = (n) => (teams || []).find(t => t.name === n)?.slug;
+  let best = null, bestT = Infinity;
+  for (const f of FIXTURES) {
+    const t = Date.parse(`${f.date}T${f.time || "21:00"}:00+07:00`);
+    if (!(t + LIVE_WINDOW_MS > nowMs) || !(t < bestT)) continue;
+    if (slug(f.home) && slug(f.away)) { best = f; bestT = t; }
+  }
+  return best ? { home: slug(best.home), away: slug(best.away), date: best.date, time: best.time || "",
+                  homeSlot: "home", awaySlot: "away" } : null;
+}
+
 /* ปุ่มย้อนกลับของมือถือ (ในแอป Android) — ปิดหน้าที่ซ้อนอยู่บนสุดก่อน แล้วค่อยกลับแท็บแรก */
 const BACK_STACK = [];
 function useBackClose(onClose) {
@@ -1564,7 +1579,8 @@ export default function App() {
           await store.set("bazi:lineupseed", JSON.stringify(LINEUP_SEED_VERSION));
         }
 
-        const f = { home: idx.home ?? list[0]?.slug, away: idx.away ?? null, date: idx.date || todayISO(), time: idx.time || "", dur: idx.dur || 115, homeSlot: idx.homeSlot || "home", awaySlot: idx.awaySlot || "away" };
+        const f = { home: idx.home ?? list[0]?.slug, away: idx.away ?? null, date: idx.date || todayISO(), time: idx.time || "", dur: idx.dur || 115, homeSlot: idx.homeSlot || "home", awaySlot: idx.awaySlot || "away",
+                    ...(nextLeagueFixture(list) || {}) };
         setTeams(list); setCache(c); setFx(f);
         if (missing.length || seededXI || idx.v !== PRESET_VERSION) {
           await store.set(IDX, JSON.stringify({ teams:list, ...f, v:PRESET_VERSION }));
@@ -1584,7 +1600,8 @@ export default function App() {
         }
         const seeded = applySeedLineups(t, c).list;
         await store.set("bazi:lineupseed", JSON.stringify(LINEUP_SEED_VERSION));
-        const f = { home:seeded[0]?.slug, away:seeded[1]?.slug ?? null, date:todayISO(), time:"", dur:115, homeSlot:"home", awaySlot:"away" };
+        const f = { home:seeded[0]?.slug, away:seeded[1]?.slug ?? null, date:todayISO(), time:"", dur:115, homeSlot:"home", awaySlot:"away",
+                    ...(nextLeagueFixture(seeded) || {}) };
         setTeams(seeded); setCache(c); setFx(f);
         await store.set(IDX, JSON.stringify({ teams:seeded, ...f, v:PRESET_VERSION }));
       }
@@ -1594,7 +1611,8 @@ export default function App() {
       const c = {};
       for (const x of t) c[x.slug] = presetPlayers(x.name);
       setTeams(t); setCache(c);
-      setFx({ home:t[0]?.slug, away:t[1]?.slug ?? null, date:todayISO(), time:"", dur:115, homeSlot:"home", awaySlot:"away" });
+      setFx({ home:t[0]?.slug, away:t[1]?.slug ?? null, date:todayISO(), time:"", dur:115, homeSlot:"home", awaySlot:"away",
+              ...(nextLeagueFixture(t) || {}) });
     } finally {
       setLoading(false);
     }
