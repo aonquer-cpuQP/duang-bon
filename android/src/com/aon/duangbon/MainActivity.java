@@ -1,6 +1,8 @@
 package com.aon.duangbon;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -42,6 +44,7 @@ public class MainActivity extends Activity {
     long loadedAt;
     ValueCallback<Uri[]> fileCallback;
     String pendingSave;
+    AlertDialog exitDialog;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -133,9 +136,31 @@ public class MainActivity extends Activity {
                 new ValueCallback<String>() {
                     @Override
                     public void onReceiveValue(String v) {
-                        if (!"\"1\"".equals(v)) finish();
+                        if (!"\"1\"".equals(v)) confirmExit();
                     }
                 });
+    }
+
+    /** หน้าแรกไม่มีอะไรให้ย้อนแล้ว — ถามก่อนปิดแอป กันกดย้อนกลับพลาด */
+    void confirmExit() {
+        if (isFinishing() || (exitDialog != null && exitDialog.isShowing())) return;
+        exitDialog = new AlertDialog.Builder(this)
+                .setTitle("ออกจากแอปดวงบอล?")
+                .setNegativeButton("ยกเลิก", null)
+                .setPositiveButton("ออก", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface d, int which) {
+                        finish();
+                    }
+                })
+                .create();
+        exitDialog.show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (exitDialog != null && exitDialog.isShowing()) exitDialog.dismiss();
+        super.onDestroy();
     }
 
     @Override
