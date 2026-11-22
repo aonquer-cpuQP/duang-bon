@@ -6767,6 +6767,13 @@ const FIXTURES = [
 /* ═══════════ ผลการแข่งฤดูกาล 2026/27 ที่ผ่านมา ═══════════ */
 
 const SEED_RESULTS = [
+  ["2026-11-21","Manchester City",1,1,"Fulham"],
+  ["2026-11-21","Tottenham Hotspur",2,0,"Ipswich Town"],
+  ["2026-11-21","Coventry City",3,2,"Crystal Palace"],
+  ["2026-11-21","Chelsea",1,4,"Leeds United"],
+  ["2026-11-21","Aston Villa",0,0,"Sunderland"],
+  ["2026-11-21","Bournemouth",2,0,"Nottingham Forest"],
+  ["2026-11-21","Newcastle United",2,2,"Arsenal"],
   ["2026-11-08","Sunderland",1,0,"Chelsea"],
   ["2026-11-08","Manchester United",4,4,"Aston Villa"],
   ["2026-11-08","Ipswich Town",1,2,"Bournemouth"],
@@ -6886,6 +6893,20 @@ const SEED_VERSION = 21;
 /* ตัวจริง 11 คนที่ประกาศจริงของแต่ละนัด — key = "วันที่|ชื่อทีม"
    ชั้นที่แม่นที่สุดของประวัติตัวจริง เก็บทุกครั้งที่อัพเดทตัวจริงก่อนเตะ */
 const SEED_XI = {
+  "2026-11-21|Arsenal": { kit:"away", start:["David Raya", "Jurriën Timber", "Ezri Konsa", "Gabriel Magalhães", "Riccardo Calafiori", "Declan Rice", "Bruno Guimarães", "Noni Madueke", "Martin Ødegaard", "Eberechi Eze", "Kai Havertz"] },
+  "2026-11-21|Newcastle United": { kit:"home", start:["Lukas Hornicek", "Amar Dedić", "Malick Thiaw", "Dan Burn", "Lewis Hall", "Lewis Miley", "Sean Steur", "Joe Willock", "Jacob Murphy", "Harvey Barnes", "William Osula"] },
+  "2026-11-21|Ipswich Town": { kit:"home", start:["Christian Walton", "Darnell Furlong", "Dara O'Shea", "Issa Diop", "Leif Davis", "Abdoul Ouattara", "Saša Lukić", "Julio Enciso", "Exequiel Palacios", "Daizen Maeda", "Zian Flemming"] },
+  "2026-11-21|Tottenham Hotspur": { kit:"home", start:["Antonin Kinsky", "Destiny Udogie", "Marcos Senesi", "Jan Paul van Hecke", "Pedro Porro", "Mohammed Kudus", "Luca Williams-Barnett", "Mateus Fernandes", "Conor Gallagher", "James Maddison", "Dominic Solanke"] },
+  "2026-11-21|Crystal Palace": { kit:"home", start:["Dean Henderson", "Anan Khalaili", "Axel Disasi", "Chris Richards", "Tyrick Mitchell", "Quinten Timber", "Adam Wharton", "Dwight McNeil", "Daichi Kamada", "Yéremy Pino", "Jørgen Strand Larsen"] },
+  "2026-11-21|Coventry City": { kit:"home", start:["Carl Rushworth", "Stephen Mfuni", "Ethan Pinnock", "Bobby Thomas", "Milan van Ewijk", "Matt Grimes", "Victor Torp", "Tatsuhiro Sakamoto", "Jack Rudoni", "Yann Gboho", "Taiwo Awoniyi"] },
+  "2026-11-21|Leeds United": { kit:"home", start:["James Trafford", "Jayden Bogle", "James Justin", "Nico Elvedi", "Tarik Muharemović", "Gabriel Gudmundsson", "Ethan Ampadu", "Sean Longstaff", "Ao Tanaka", "Noah Okafor", "Dominic Calvert-Lewin"] },
+  "2026-11-21|Chelsea": { kit:"home", start:["Emiliano Martínez", "Joshua Acheampong", "Pep Chavarría", "Wesley Fofana", "Levi Colwill", "Estêvão", "Roméo Lavia", "Moisés Caicedo", "Cole Palmer", "Morgan Rogers", "Emanuel Emegha"] },
+  "2026-11-21|Sunderland": { kit:"home", start:["Robin Roefs", "Trai Hume", "Thomas Meunier", "Nordi Mukiele", "Luke O'Nien", "Reinildo Mandava", "Jules Ahoka", "Noah Sadiki", "Enzo Le Fée", "Chemsdine Talbi", "Wilson Isidor"] },
+  "2026-11-21|Aston Villa": { kit:"home", start:["Zion Suzuki", "Aaron Wan-Bissaka", "Pau Torres", "Taylor Harwood-Bellis", "Ian Maatsen", "Leon Goretzka", "Alysson Edward", "Emiliano Buendía", "Boubacar Kamara", "Johan Manzambi", "Nicolas Jackson"] },
+  "2026-11-21|Nottingham Forest": { kit:"third", start:["Matz Sels", "Murillo", "Jair Cunha", "Nikola Milenković", "Neco Williams", "Daniel Muñoz", "Ryan Yates", "James McAtee", "Morgan Gibbs-White", "Dan Ndoye", "Liam Delap"] },
+  "2026-11-21|Bournemouth": { kit:"home", start:["Đorđe Petrović", "Adam Smith", "James Hill", "António Silva", "Adrien Truffert", "Ryan Christie", "Tyler Adams", "Marcus Tavernier", "Justin Kluivert", "Rayan", "Evanilson"] },
+  "2026-11-21|Fulham": { kit:"away", start:["Bernd Leno", "Kenny Tete", "David Affengruber", "Calvin Bassey", "Ryan Sessegnon", "Sander Berge", "Shea Charles", "Oscar Bobb", "Joshua King", "Alex Iwobi", "Rodrigo Muniz"] },
+  "2026-11-21|Manchester City": { kit:"home", start:["Gianluigi Donnarumma", "Abdukodir Khusanov", "Rúben Dias", "Marc Guéhi", "Nico O'Reilly", "Ayyoub Bouaddi", "Elliot Anderson", "Iliman Ndiaye", "Phil Foden", "Jérémy Doku", "Erling Haaland"] },
   "2026-11-08|Liverpool": { start:["Alisson", "Milos Kerkez", "Virgil van Dijk", "Jeremy Jacquet", "Ronald Araújo", "Alexis Mac Allister", "Dominik Szoboszlai", "Bradley Barcola", "Florian Wirtz", "Cody Gakpo", "Alexander Isak"] },
   "2026-11-08|Manchester United": { kit:"home", start:["Senne Lammens", "Leny Yoro", "Harry Maguire", "Noussair Mazraoui", "Diogo Dalot", "Kobbie Mainoo", "Youri Tielemans", "Bruno Fernandes", "Amad Diallo", "Matheus Cunha", "Bryan Mbeumo"] },
   "2026-11-03|Manchester United": { kit:"home", start:["Senne Lammens", "Leny Yoro", "Harry Maguire", "Ayden Heaven", "Diogo Dalot", "Carlos Baleba", "Kobbie Mainoo", "Amad Diallo", "Bruno Fernandes", "Matheus Cunha", "Bryan Mbeumo"] },
