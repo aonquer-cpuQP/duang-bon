@@ -6767,6 +6767,7 @@ const FIXTURES = [
 /* ═══════════ ผลการแข่งฤดูกาล 2026/27 ที่ผ่านมา ═══════════ */
 
 const SEED_RESULTS = [
+  ["2026-11-23","Brentford",4,0,"Everton"],
   ["2026-11-22","Hull City",2,0,"Brighton"],
   ["2026-11-22","Liverpool",4,0,"Manchester United"],
   ["2026-11-21","Manchester City",1,1,"Fulham"],
@@ -6895,6 +6896,8 @@ const SEED_VERSION = 21;
 /* ตัวจริง 11 คนที่ประกาศจริงของแต่ละนัด — key = "วันที่|ชื่อทีม"
    ชั้นที่แม่นที่สุดของประวัติตัวจริง เก็บทุกครั้งที่อัพเดทตัวจริงก่อนเตะ */
 const SEED_XI = {
+  "2026-11-23|Everton": { kit:"away", start:["Jordan Pickford", "Jake O'Brien", "James Tarkowski", "Jarrad Branthwaite", "Vitaliy Mykolenko", "James Garner", "Harrison Armstrong", "Kiernan Dewsbury-Hall", "Merlin Rohl", "Tyrique George", "Thierno Barry"] },
+  "2026-11-23|Brentford": { kit:"home", start:["Caoimhin Kelleher", "Michael Kayode", "Kristoffer Ajer", "Sepp van den Berg", "Keane Lewis-Potter", "Vitaly Janelt", "Yehor Yarmoliuk", "Mikkel Damsgaard", "Dango Ouattara", "Callum Wilson", "Jaidon Anthony"] },
   "2026-11-22|Manchester United": { kit:"third", start:["Senne Lammens", "Leny Yoro", "Matthijs de Ligt", "Lisandro Martínez", "Diogo Dalot", "Youri Tielemans", "Kobbie Mainoo", "Bryan Mbeumo", "Bruno Fernandes", "Patrick Dorgu", "Matheus Cunha"] },
   "2026-11-22|Liverpool": { kit:"home", start:["Alisson", "Ronald Araújo", "Virgil van Dijk", "Jeremy Jacquet", "Milos Kerkez", "Dominik Szoboszlai", "Alexis Mac Allister", "Rio Ngumoha", "Florian Wirtz", "Bradley Barcola", "Alexander Isak"] },
   "2026-11-22|Brighton": { kit:"home", start:["Bart Verbruggen", "Costinha", "Luka Vuskovic", "Lewis Dunk", "Olivier Boscagli", "Pascal Groß", "Chema Andrés", "Diego Gómez", "Yasin Ayari", "Maxime De Cuyper", "Georginio Rutter"] },
@@ -7074,16 +7077,16 @@ function poissonForecast(model, home, away) {
    วัดกับผล 89 นัดแล้ว ตลาดทายตัวเต็งถูก 67.2% ส่วนโมเดลเราได้ 60.3%
    จึงใช้ตลาดเป็นฐาน แล้วให้ดวงเป็นตัวเอียงเล็ก ๆ แทนที่จะเชื่อโมเดลตัวเองล้วน */
 const SEED_ODDS = [
-  ["2026-11-23","Brentford","Everton",2.12,3.51,3.26,1.71,2.05,-0.25,1.81,1.94],
-  ["2026-11-22","Liverpool","Manchester United",1.74,4.14,4.08,1.46,2.6,-0.75,1.87,1.87],
-  ["2026-11-22","Hull City","Brighton",6.22,4.41,1.48,1.64,2.19,1,2,1.75],
-  ["2026-11-21","Newcastle United","Arsenal",5.46,4.12,1.57,1.69,2.08,1,1.82,1.92],
-  ["2026-11-21","Tottenham Hotspur","Ipswich Town",1.52,4.42,5.49,1.56,2.33,-1,1.82,1.92],
-  ["2026-11-21","Coventry City","Crystal Palace",2.42,3.5,2.73,1.66,2.14,0,1.78,1.96],
-  ["2026-11-21","Chelsea","Leeds United",1.87,3.66,3.89,1.75,2,-0.5,1.81,1.92],
-  ["2026-11-21","Bournemouth","Nottingham Forest",1.93,3.54,3.78,1.81,1.93,-0.5,1.87,1.85],
-  ["2026-11-21","Aston Villa","Sunderland",1.76,3.77,4.34,1.75,2.01,-0.75,1.94,1.8],
-  ["2026-11-21","Manchester City","Fulham",1.37,5.13,7.17,1.46,2.6,-1.5,1.97,1.78],
+  ["2026-11-23","Brentford","Everton",2.1,3.43,3.41,1.84,1.89,-0.5,2.05,1.71],
+  ["2026-11-22","Liverpool","Manchester United",1.76,4.12,4.01,1.47,2.6,-0.5,1.73,2.03],
+  ["2026-11-22","Hull City","Brighton",6.31,4.47,1.48,1.62,2.21,1.25,1.74,2.02],
+  ["2026-11-21","Newcastle United","Arsenal",6,4.38,1.51,1.65,2.16,1,1.96,1.79],
+  ["2026-11-21","Tottenham Hotspur","Ipswich Town",1.47,4.67,6,1.53,2.4,-1,1.71,2.06],
+  ["2026-11-21","Coventry City","Crystal Palace",2.47,3.48,2.72,1.66,2.14,0,1.8,1.96],
+  ["2026-11-21","Chelsea","Leeds United",1.95,3.6,3.71,1.79,1.96,-0.5,1.91,1.82],
+  ["2026-11-21","Bournemouth","Nottingham Forest",2.04,3.37,3.61,1.97,1.77,-0.5,2,1.75],
+  ["2026-11-21","Aston Villa","Sunderland",1.7,3.91,4.6,1.66,2.15,-0.75,1.84,1.91],
+  ["2026-11-21","Manchester City","Fulham",1.36,5.3,7.4,1.44,2.67,-1.5,1.94,1.8],
   ["2026-11-08","Sunderland","Chelsea",3,3.43,2.27,1.82,1.93,0.25,1.82,1.93],
   ["2026-11-08","Manchester United","Aston Villa",1.97,3.95,3.31,1.43,2.72,-0.5,1.92,1.81],
   ["2026-11-08","Ipswich Town","Bournemouth",3.43,3.72,1.99,1.61,2.25,0.5,1.79,1.95],
@@ -7200,6 +7203,16 @@ const ODDS_SEED_VERSION = 1;
            แปลว่าที่ข้อมูลเท่านี้ ทีมไหนเตะมุมมากน้อย ยังแยกไม่ออกจากความบังเอิญ
    ใบเหลือง โมเดลรายทีมชนะเล็กน้อยที่ K=12 (log loss 2.119 เทียบ 2.140) จึงใช้ K=12 */
 const SEED_SIDE = [
+  ["2026-11-23","Brentford","Everton",6,3,0,1,0,1],
+  ["2026-11-22","Liverpool","Manchester United",15,5,1,0,0,1],
+  ["2026-11-22","Hull City","Brighton",3,4,2,4,0,1],
+  ["2026-11-21","Newcastle United","Arsenal",6,3,3,3,0,0],
+  ["2026-11-21","Tottenham Hotspur","Ipswich Town",8,6,4,1,0,0],
+  ["2026-11-21","Coventry City","Crystal Palace",4,6,1,2,0,0],
+  ["2026-11-21","Chelsea","Leeds United",3,2,1,3,0,0],
+  ["2026-11-21","Bournemouth","Nottingham Forest",6,4,1,3,0,0],
+  ["2026-11-21","Aston Villa","Sunderland",7,2,2,2,0,0],
+  ["2026-11-21","Manchester City","Fulham",8,6,1,3,0,0],
   ["2026-11-08","Sunderland","Chelsea",2,2,5,4,0,0],
   ["2026-11-08","Manchester United","Aston Villa",8,1,1,1,0,0],
   ["2026-11-08","Ipswich Town","Bournemouth",2,7,2,3,0,0],
