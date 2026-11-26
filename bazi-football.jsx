@@ -513,7 +513,7 @@ const readJson = async (key, fallback) => {
 };
 
 const RENAME = { "แมนยู":"Manchester United", "แมนฯซิตี้":"Manchester City" };
-const PRESET_VERSION = 25;   // เพิ่มเลขนี้ทุกครั้งที่เพิ่มทีมสำเร็จรูป
+const PRESET_VERSION = 26;   // เพิ่มเลขนี้ทุกครั้งที่เพิ่มทีมสำเร็จรูป
                              // 23 = Pochettino คุมแมนยู · 24 = Thomas Frank คุมพาเลซ + แก้วันเกิด ผจก. 3 คน
 const IDX = "bazi:index";
 const teamKey = (slug) => "bazi:team:" + slug;
@@ -700,9 +700,12 @@ const PRESETS = {
   "Sporting CP": { kit:"green", rows:[
     ["Rui Borges","ผจก.","1981-07-07","v"],
     ["Rui Silva","GK","1994-02-07","v"],["João Virgínia","GK","1999-10-10"],["Diego Callai","GK","2004-07-18"],
+    ["Kaique Pereira","GK","2003-04-16","w"],
     ["Zeno Debast","DF","2003-10-24"],["Gonçalo Inácio","DF","2001-08-25"],
-    ["Maximiliano Araújo","MF","2000-02-15"],["Flávio Gonçalves","MF","2007-05-30"],["Giorgi Kochorashvili","MF","1999-06-29"],
-    ["Geny Catamo","FW","2001-01-26"]
+    ["Iván Fresneda","DF","2004-09-28","w"],["Eduardo Quaresma","DF","2002-03-02","w"],
+    ["Maximiliano Araújo","MF","2000-02-15","w"],["Flávio Gonçalves","MF","2007-05-30"],["Giorgi Kochorashvili","MF","1999-06-29"],
+    ["Issa Doumbia","MF","2003-10-16","w"],["Sergi Altimira","MF","2001-08-25","w"],["Silas Andersen","MF","2004-06-13","w"],
+    ["Geny Catamo","FW","2001-01-26"],["Luis Suárez","FW","1997-12-02","w"],["Luis Guilherme","FW","2006-02-09","w"]
   ] },
   "RB Leipzig": { kit:"white", rows:[
     ["Martín Demichelis","ผจก.","1980-12-20"],
@@ -6259,6 +6262,8 @@ const RATING_SEED_VERSION = 19;
 const CARDS_KEY = "bazi:cards";
 /* ใบที่บันทึกไว้แล้ว — เก็บเป็นข้อมูลดิบ ยังไม่เอาไปคิดคะแนน */
 const SEED_CARDS = [
+  /* UCL Sporting 2-2 แมนยู: Tielemans ใบเหลืองที่สองช่วงทดเวลา (ไม่ทราบนาทีใบแรก · Sporting ได้ 2 ใบเหลือง ไม่ทราบชื่อ) */
+  ["2026-11-25","Manchester United","Youri Tielemans",90,"R"],
   ["2026-11-03","AS Roma","Matías Soulé",20,"Y"],
   ["2026-11-03","Manchester United","Bruno Fernandes",20,"Y"],
   ["2026-11-03","AS Roma","Emanuele Lulli",35,"Y"],
@@ -6378,7 +6383,7 @@ const SEED_CARDS = [
   ["2026-10-17","Hull City","Regan Slater",27,"Y"],
   ["2026-10-17","Hull City","Lucas Herrington",22,"Y"],
 ].map(([date,team,player,minute,type]) => ({ id:`c_${date}_${team}_${player}_${minute}`.replace(/\s+/g,""), date, team, player, minute, type }));
-const CARD_SEED_VERSION = 14;
+const CARD_SEED_VERSION = 15;
 
 const CARD_TYPES = [["Y","ใบเหลือง","#D8A94A"],["Y2","เหลืองใบที่สอง","#C0453D"],["R","ใบแดงตรง","#8E1418"]];
 
@@ -6767,6 +6772,8 @@ const FIXTURES = [
 /* ═══════════ ผลการแข่งฤดูกาล 2026/27 ที่ผ่านมา ═══════════ */
 
 const SEED_RESULTS = [
+  /* UCL นัด 5 — คนละรายการกับพรีเมียร์ลีก */
+  ["2026-11-25","Sporting CP",2,2,"Manchester United"],
   ["2026-11-23","Brentford",4,0,"Everton"],
   ["2026-11-22","Hull City",2,0,"Brighton"],
   ["2026-11-22","Liverpool",4,0,"Manchester United"],
@@ -6890,12 +6897,14 @@ const SEED_RESULTS = [
   ["2026-10-17","Manchester City",3,2,"Ipswich Town"],
   ["2026-10-17","Newcastle United",0,1,"Aston Villa"],
 ].map(([date,home,hg,ag,away]) => ({ id:`s_${date}_${home}`.replace(/\s+/g,""), date, home, away, hg, ag }));
-const SEED_VERSION = 21;
+const SEED_VERSION = 22;
 
 /* ═══════════ ตัวจริงที่ประกาศแล้ว ═══════════ */
 /* ตัวจริง 11 คนที่ประกาศจริงของแต่ละนัด — key = "วันที่|ชื่อทีม"
    ชั้นที่แม่นที่สุดของประวัติตัวจริง เก็บทุกครั้งที่อัพเดทตัวจริงก่อนเตะ */
 const SEED_XI = {
+  "2026-11-25|Sporting CP": { kit:"home", start:["Kaique Pereira", "Iván Fresneda", "Eduardo Quaresma", "Gonçalo Inácio", "Maximiliano Araújo", "Issa Doumbia", "Sergi Altimira", "Silas Andersen", "Geny Catamo", "Luis Suárez", "Luis Guilherme"] },
+  "2026-11-25|Manchester United": { kit:"away", start:["Senne Lammens", "Noussair Mazraoui", "Harry Maguire", "Leny Yoro", "Lisandro Martínez", "Youri Tielemans", "Kobbie Mainoo", "Amad Diallo", "Bruno Fernandes", "Bryan Mbeumo", "Joshua Zirkzee"] },
   "2026-11-23|Everton": { kit:"away", start:["Jordan Pickford", "Jake O'Brien", "James Tarkowski", "Jarrad Branthwaite", "Vitaliy Mykolenko", "James Garner", "Harrison Armstrong", "Kiernan Dewsbury-Hall", "Merlin Rohl", "Tyrique George", "Thierno Barry"] },
   "2026-11-23|Brentford": { kit:"home", start:["Caoimhin Kelleher", "Michael Kayode", "Kristoffer Ajer", "Sepp van den Berg", "Keane Lewis-Potter", "Vitaly Janelt", "Yehor Yarmoliuk", "Mikkel Damsgaard", "Dango Ouattara", "Callum Wilson", "Jaidon Anthony"] },
   "2026-11-22|Manchester United": { kit:"third", start:["Senne Lammens", "Leny Yoro", "Matthijs de Ligt", "Lisandro Martínez", "Diogo Dalot", "Youri Tielemans", "Kobbie Mainoo", "Bryan Mbeumo", "Bruno Fernandes", "Patrick Dorgu", "Matheus Cunha"] },
@@ -6953,9 +6962,10 @@ const SEED_XI = {
 };
 
 const SEED_LINEUPS = {
+  "Manchester United": { confirmed:true, forDate:"2026-11-25", kit:"away", start:["Senne Lammens", "Noussair Mazraoui", "Harry Maguire", "Leny Yoro", "Lisandro Martínez", "Youri Tielemans", "Kobbie Mainoo", "Amad Diallo", "Bruno Fernandes", "Bryan Mbeumo", "Joshua Zirkzee"] },
+  "Sporting CP": { confirmed:true, forDate:"2026-11-25", kit:"home", start:["Kaique Pereira", "Iván Fresneda", "Eduardo Quaresma", "Gonçalo Inácio", "Maximiliano Araújo", "Issa Doumbia", "Sergi Altimira", "Silas Andersen", "Geny Catamo", "Luis Suárez", "Luis Guilherme"] },
   "Everton": { confirmed:true, forDate:"2026-11-23", kit:"away", start:["Jordan Pickford", "Jake O'Brien", "James Tarkowski", "Jarrad Branthwaite", "Vitaliy Mykolenko", "James Garner", "Harrison Armstrong", "Kiernan Dewsbury-Hall", "Merlin Rohl", "Tyrique George", "Thierno Barry"] },
   "Brentford": { confirmed:true, forDate:"2026-11-23", kit:"home", start:["Caoimhin Kelleher", "Michael Kayode", "Kristoffer Ajer", "Sepp van den Berg", "Keane Lewis-Potter", "Vitaly Janelt", "Yehor Yarmoliuk", "Mikkel Damsgaard", "Dango Ouattara", "Callum Wilson", "Jaidon Anthony"] },
-  "Manchester United": { confirmed:true, forDate:"2026-11-22", kit:"third", start:["Senne Lammens", "Leny Yoro", "Matthijs de Ligt", "Lisandro Martínez", "Diogo Dalot", "Youri Tielemans", "Kobbie Mainoo", "Bryan Mbeumo", "Bruno Fernandes", "Patrick Dorgu", "Matheus Cunha"] },
   "Liverpool": { confirmed:true, forDate:"2026-11-22", kit:"home", start:["Alisson", "Ronald Araújo", "Virgil van Dijk", "Jeremy Jacquet", "Milos Kerkez", "Dominik Szoboszlai", "Alexis Mac Allister", "Rio Ngumoha", "Florian Wirtz", "Bradley Barcola", "Alexander Isak"] },
   "Brighton": { confirmed:true, forDate:"2026-11-22", kit:"home", start:["Bart Verbruggen", "Costinha", "Luka Vuskovic", "Lewis Dunk", "Olivier Boscagli", "Pascal Groß", "Chema Andrés", "Diego Gómez", "Yasin Ayari", "Maxime De Cuyper", "Georginio Rutter"] },
   "Hull City": { confirmed:true, forDate:"2026-11-22", kit:"home", start:["Konstantinos Tzolakis", "Lewie Coyle", "Semi Ajayi", "Nobel Mendy", "Elliot Stroud", "Regan Slater", "Tim Iroegbunam", "Matt Crooks", "Mohamed Belloumi", "Oli McBurnie", "Mohamed-Ali Cho"] },
